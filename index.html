@@ -1029,7 +1029,7 @@ function render() {
       card.className = 'host-card' + (emails.length > 0 ? ' has-students' : '');
 
       const linksHtml = [
-        host.linkedin ? '<a href="#">LinkedIn ↗</a>' : '',
+        host.linkedin ? `<a href="https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(host.name + ' ' + host.company)}" target="_blank">LinkedIn ↗</a>` : '',
         host.website ? `<a href="https://${host.website}" target="_blank">${host.website} ↗</a>` : ''
       ].filter(Boolean).join('');
 
