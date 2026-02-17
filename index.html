@@ -295,8 +295,8 @@
   }
 
   .btn-add {
-    padding: 0.45rem 0.8rem;
-    background: var(--ni-navy);
+    padding: 0.45rem 0.9rem;
+    background: var(--ni-coral);
     color: white;
     border: none;
     border-radius: 6px;
@@ -304,9 +304,15 @@
     font-weight: 600;
     cursor: pointer;
     font-family: 'DM Sans', sans-serif;
-    transition: background 0.2s;
+    transition: all 0.2s;
+    opacity: 0.5;
+    pointer-events: none;
   }
-  .btn-add:hover { background: var(--ni-navy-light); }
+  .btn-add.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .btn-add.active:hover { background: #e85a4a; transform: translateY(-1px); }
 
   .student-tags {
     display: flex;
@@ -797,8 +803,8 @@ function render() {
         <div class="student-area">
           <div class="student-label">Nominate a student</div>
           <div class="student-input-row">
-            <input type="email" class="student-email-input" placeholder="student@school.ac.uk" data-key="${key}">
-            <button class="btn-add" data-key="${key}">Nominate</button>
+            <input type="email" class="student-email-input" placeholder="Enter student email, then press Enter ↵" data-key="${key}">
+            <button class="btn-add" data-key="${key}">+ Nominate</button>
           </div>
           ${tagsHtml ? `<div class="student-tags">${tagsHtml}</div>` : ''}
         </div>
@@ -853,6 +859,19 @@ document.getElementById('hostList').addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && e.target.classList.contains('student-email-input')) {
     const key = e.target.dataset.key;
     document.querySelector(`.btn-add[data-key="${CSS.escape(key)}"]`).click();
+  }
+});
+
+// Show/hide Nominate button based on input content
+document.getElementById('hostList').addEventListener('input', (e) => {
+  if (e.target.classList.contains('student-email-input')) {
+    const key = e.target.dataset.key;
+    const btn = document.querySelector(`.btn-add[data-key="${CSS.escape(key)}"]`);
+    if (e.target.value.trim()) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
   }
 });
 
