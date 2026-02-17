@@ -78,25 +78,41 @@
     flex-wrap: wrap;
   }
 
-  .subject-select {
+  .subject-filter {
     flex: 1;
     min-width: 220px;
-    padding: 0.6rem 1rem;
-    border: 2px solid rgba(255,255,255,0.15);
-    border-radius: var(--radius);
-    background: rgba(255,255,255,0.08);
-    color: white;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23fff' stroke-width='2' fill='none'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 1rem center;
   }
 
-  .subject-select option { color: var(--ni-navy); background: white; }
+  .subject-filter-list {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
 
+  .subject-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.08);
+    color: white;
+    font-size: 0.78rem;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .subject-chip input {
+    margin: 0;
+    width: 14px;
+    height: 14px;
+    accent-color: var(--ni-coral);
+  }
+
+  .subject-chip:hover {
+    background: rgba(255,255,255,0.14);
+  }
   .search-input {
     flex: 1;
     min-width: 180px;
@@ -323,6 +339,7 @@
     margin-top: 0.35rem;
   }
 
+
   .student-tag {
     display: inline-flex;
     align-items: center;
@@ -333,6 +350,17 @@
     border-radius: 20px;
     font-size: 0.75rem;
     font-weight: 500;
+  }
+
+  .student-tag.quick-add {
+    border: 1px solid var(--ni-coral-mid);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    line-height: 1.2;
+  }
+
+  .student-tag.quick-add:hover {
+    background: var(--ni-coral-mid);
   }
 
   .student-tag .remove {
@@ -469,7 +497,7 @@
 
   .step-content {
     max-height: 500px;
-    overflow: hidden;
+    overflow: visible;
     transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
     opacity: 1;
   }
@@ -478,6 +506,7 @@
     max-height: 0;
     opacity: 0;
     margin: 0;
+    overflow: hidden;
   }
 
   /* Inline summary shown when step is collapsed on desktop */
@@ -532,7 +561,7 @@
       flex-direction: column;
     }
 
-    .subject-select, .search-input {
+    .subject-filter, .search-input {
       min-width: 100%;
       min-height: 44px;
       font-size: 16px;
@@ -694,9 +723,9 @@
       <div class="step-label step-toggle" id="step2Toggle">Step 2 — Browse hosts and nominate students<span class="step-summary" id="step2Summary"></span><span class="step-chevron"></span></div>
       <div class="step-content" id="step2Content">
         <div class="controls">
-          <select class="subject-select" id="subjectFilter">
-            <option value="all">All Subjects</option>
-          </select>
+          <div class="subject-filter" id="subjectFilterWrap">
+            <div class="subject-filter-list" id="subjectFilterMenu" aria-label="Filter by one or more subjects"></div>
+          </div>
           <input type="text" class="search-input" id="searchInput" placeholder="Search hosts, companies…">
 
           <button class="btn btn-outline" id="clearAllBtn" title="Clear all student emails">Clear All</button>
@@ -976,6 +1005,7 @@ const hosts = [
 
 // ── State ──
 let studentAssignments = {}; // { hostKey: [email1, email2, ...] }
+let savedStudents = []; // most recently used student emails, used for quick-add across hosts
 
 function escapeHtml(value) {
   return String(value)
@@ -1018,13 +1048,37 @@ function loadState() {
         ])
         .filter(([, emails]) => emails.length > 0)
     );
+
+    const savedStudentsRaw = localStorage.getItem('ni-saved-students');
+    if (savedStudentsRaw) {
+      const parsedStudents = JSON.parse(savedStudentsRaw);
+      if (Array.isArray(parsedStudents)) {
+        savedStudents = [...new Set(parsedStudents
+          .map(email => String(email).trim().toLowerCase())
+          .filter(isValidEmail)
+        )].slice(0, 30);
+      }
+    }
   } catch(e) {}
 }
 
 function saveState() {
   try {
     localStorage.setItem('ni-host-assignments', JSON.stringify(studentAssignments));
+    localStorage.setItem('ni-saved-students', JSON.stringify(savedStudents));
   } catch(e) {}
+}
+
+function rememberStudents(emails) {
+  const incoming = [...new Set((emails || [])
+    .map(email => String(email).trim().toLowerCase())
+    .filter(isValidEmail)
+  )];
+
+  if (incoming.length === 0) return;
+
+  const existing = savedStudents.filter(email => !incoming.includes(email));
+  savedStudents = [...incoming, ...existing].slice(0, 30);
 }
 
 function hostKey(host) {
@@ -1052,17 +1106,22 @@ function updateExportBarState(totalAssigned) {
 const subjects = [...new Set(hosts.map(h => h.subject))];
 
 // ── Populate filter ──
-const subjectFilter = document.getElementById('subjectFilter');
-subjects.forEach(s => {
-  const opt = document.createElement('option');
-  opt.value = s;
-  opt.textContent = s;
-  subjectFilter.appendChild(opt);
+const subjectFilterMenu = document.getElementById('subjectFilterMenu');
+
+subjects.forEach(subject => {
+  const row = document.createElement('label');
+  row.className = 'subject-chip';
+  row.innerHTML = `<input type="checkbox" value="${escapeHtml(subject)}"> <span>${subject}</span>`;
+  subjectFilterMenu.appendChild(row);
 });
+
+function getSelectedSubjects() {
+  return Array.from(subjectFilterMenu.querySelectorAll('input[type="checkbox"]:checked')).map(input => input.value);
+}
 
 // ── Render ──
 function render() {
-  const filter = subjectFilter.value;
+  const selectedSubjects = getSelectedSubjects();
   const search = document.getElementById('searchInput').value.toLowerCase().trim();
   const container = document.getElementById('hostList');
   container.innerHTML = '';
@@ -1074,7 +1133,7 @@ function render() {
 
   const grouped = {};
   hosts.forEach(h => {
-    if (filter !== 'all' && h.subject !== filter) return;
+    if (selectedSubjects.length > 0 && !selectedSubjects.includes(h.subject)) return;
     if (search) {
       const haystack = `${h.name} ${h.company} ${h.desc}`.toLowerCase();
       if (!haystack.includes(search)) return;
@@ -1118,6 +1177,10 @@ function render() {
         `<span class="student-tag">${escapeHtml(email)}<span class="remove" data-key="${key}" data-idx="${i}">×</span></span>`
       ).join('');
 
+      const quickAddHtml = savedStudents.length > 0
+        ? `<div class="student-tags"><span class="student-label" style="margin-bottom:0; font-size:0.65rem;">Quick add recent:</span>${savedStudents.slice(0, 8).map(email => `<button class="student-tag quick-add" data-key="${key}" data-email="${escapeHtml(email)}" title="Add ${escapeHtml(email)}">+ ${escapeHtml(email)}</button>`).join('')}</div>`
+        : '';
+
       card.innerHTML = `
         <div class="host-top">
           <div>
@@ -1131,9 +1194,10 @@ function render() {
         <div class="student-area">
           <div class="student-label">Nominate a student</div>
           <div class="student-input-row">
-            <input type="email" class="student-email-input" placeholder="Enter one or more student emails (comma or space separated)" data-key="${key}">
+            <input type="email" class="student-email-input" list="studentHints" placeholder="Enter one or more student emails (comma or space separated)" data-key="${key}">
             <button class="btn-add" data-key="${key}">+ Nominate</button>
           </div>
+          ${quickAddHtml}
           ${tagsHtml ? `<div class="student-tags">${tagsHtml}</div>` : ''}
         </div>
       `;
@@ -1146,6 +1210,19 @@ function render() {
 
   // Export bar summary
   updateExportBarState(totalAssigned);
+
+  const existingHints = document.getElementById('studentHints');
+  if (existingHints) existingHints.remove();
+  if (savedStudents.length > 0) {
+    const datalist = document.createElement('datalist');
+    datalist.id = 'studentHints';
+    savedStudents.slice(0, 30).forEach(email => {
+      const opt = document.createElement('option');
+      opt.value = email;
+      datalist.appendChild(opt);
+    });
+    document.body.appendChild(datalist);
+  }
 }
 
 // ── Event Delegation ──
@@ -1174,9 +1251,29 @@ document.getElementById('hostList').addEventListener('click', (e) => {
     }
 
     studentAssignments[key].push(...added);
+    rememberStudents(added);
     saveState();
     render();
     showToast(`${added.length} nomination${added.length !== 1 ? 's' : ''} added ✓`);
+  }
+
+  // Quick-add a saved student to this host
+  if (e.target.classList.contains('quick-add')) {
+    const key = e.target.dataset.key;
+    const email = String(e.target.dataset.email || '').trim().toLowerCase();
+    if (!isValidEmail(email)) return;
+    if (!studentAssignments[key]) studentAssignments[key] = [];
+
+    if (studentAssignments[key].includes(email)) {
+      showToast('Already added');
+      return;
+    }
+
+    studentAssignments[key].push(email);
+    rememberStudents([email]);
+    saveState();
+    render();
+    showToast('Nomination added ✓');
   }
 
   // Remove tag
@@ -1212,7 +1309,10 @@ document.getElementById('hostList').addEventListener('input', (e) => {
 });
 
 // Filters
-subjectFilter.addEventListener('change', render);
+subjectFilterMenu.addEventListener('change', () => {
+  render();
+  updateStepSummaries();
+});
 document.getElementById('searchInput').addEventListener('input', render);
 
 // Clear all
@@ -1319,10 +1419,10 @@ function updateStepSummaries() {
   step1Summary.textContent = parts.length ? parts.join(' · ') : '';
 
   const step2Summary = document.getElementById('step2Summary');
-  const subject = document.getElementById('subjectFilter');
   const search = document.getElementById('searchInput').value.trim();
   const filterParts = [];
-  if (subject.value !== 'all') filterParts.push(subject.options[subject.selectedIndex].text);
+  const selectedSubjects = getSelectedSubjects();
+  if (selectedSubjects.length > 0) filterParts.push(selectedSubjects.join(', '));
   if (search) filterParts.push('"' + search + '"');
   step2Summary.textContent = filterParts.length ? filterParts.join(' · ') : '';
 }
@@ -1351,7 +1451,7 @@ document.getElementById('teacherName').addEventListener('input', updateStepSumma
 document.getElementById('teacherEmail').addEventListener('input', updateStepSummaries);
 document.getElementById('teacherSchool').addEventListener('input', updateStepSummaries);
 document.getElementById('searchInput').addEventListener('input', updateStepSummaries);
-document.getElementById('subjectFilter').addEventListener('change', updateStepSummaries);
+
 
 
 let hasAutoCollapsedForBrowse = false;
