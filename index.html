@@ -328,40 +328,92 @@
   }
   .btn-add.active:hover { background: #e85a4a; transform: translateY(-1px); }
 
-  .student-tags {
+  /* Quick-add suggestions row */
+  .quick-add-section {
+    margin-top: 0.45rem;
+    padding: 0.45rem 0.55rem;
+    background: #F8FAFC;
+    border: 1px dashed var(--ni-border);
+    border-radius: 6px;
+  }
+
+  .quick-add-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ni-grey);
+    margin-bottom: 0.3rem;
+  }
+
+  .quick-add-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .student-tag.quick-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: white;
+    color: var(--ni-slate);
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    font-size: 0.73rem;
+    font-weight: 500;
+    border: 1px solid var(--ni-border);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    line-height: 1.2;
+    transition: all 0.15s;
+  }
+
+  .student-tag.quick-add:hover {
+    border-color: var(--ni-coral);
+    color: var(--ni-coral);
+    background: var(--ni-coral-light);
+  }
+
+  /* Nominated students list */
+  .nominated-section {
+    margin-top: 0.5rem;
+  }
+
+  .nominated-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ni-green);
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .nominated-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 0.35rem;
-    margin-top: 0.35rem;
   }
-
 
   .student-tag {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    background: var(--ni-coral-light);
+    background: var(--ni-green-light);
     color: var(--ni-navy);
     padding: 0.25rem 0.6rem;
     border-radius: 20px;
     font-size: 0.75rem;
     font-weight: 500;
-  }
-
-  .student-tag.quick-add {
-    border: 1px solid var(--ni-coral-mid);
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    line-height: 1.2;
-  }
-
-  .student-tag.quick-add:hover {
-    background: var(--ni-coral-mid);
+    border: 1px solid #C6F6D5;
   }
 
   .student-tag .remove {
     cursor: pointer;
-    color: var(--ni-coral);
+    color: #38A169;
     font-weight: 700;
     font-size: 0.85rem;
     line-height: 1;
@@ -626,13 +678,23 @@
       margin-bottom: 0.4rem;
     }
 
-    .student-tags {
+    .quick-add-section {
+      padding: 0.5rem 0.6rem;
+    }
+
+    .nominated-tags, .quick-add-tags {
       gap: 0.4rem;
     }
 
     .student-tag {
       font-size: 0.78rem;
       padding: 0.35rem 0.7rem;
+    }
+
+    .student-tag.quick-add {
+      font-size: 0.78rem;
+      padding: 0.35rem 0.7rem;
+      min-height: 36px;
     }
 
     .student-tag .remove {
@@ -1169,12 +1231,21 @@ function render() {
         host.website ? `<a href="https://${host.website}" target="_blank" rel="noopener noreferrer">${host.website} ↗</a>` : ''
       ].filter(Boolean).join('');
 
-      const tagsHtml = emails.map((email, i) =>
-        `<span class="student-tag">${escapeHtml(email)}<span class="remove" data-key="${key}" data-idx="${i}">×</span></span>`
-      ).join('');
+      const tagsHtml = emails.length > 0
+        ? `<div class="nominated-section">
+            <div class="nominated-label">&#10003; Nominated (${emails.length})</div>
+            <div class="nominated-tags">${emails.map((email, i) =>
+              `<span class="student-tag">${escapeHtml(email)}<span class="remove" data-key="${key}" data-idx="${i}">×</span></span>`
+            ).join('')}</div>
+          </div>`
+        : '';
 
-      const quickAddHtml = savedStudents.length > 0
-        ? `<div class="student-tags"><span class="student-label" style="margin-bottom:0; font-size:0.65rem;">Quick add recent:</span>${savedStudents.slice(0, 8).map(email => `<button class="student-tag quick-add" data-key="${key}" data-email="${escapeHtml(email)}" title="Add ${escapeHtml(email)}">+ ${escapeHtml(email)}</button>`).join('')}</div>`
+      const availableQuickAdd = savedStudents.filter(email => !emails.includes(email));
+      const quickAddHtml = availableQuickAdd.length > 0
+        ? `<div class="quick-add-section">
+            <div class="quick-add-label">Previously used emails — click to add</div>
+            <div class="quick-add-tags">${availableQuickAdd.slice(0, 8).map(email => `<button class="student-tag quick-add" data-key="${key}" data-email="${escapeHtml(email)}" title="Add ${escapeHtml(email)}">+ ${escapeHtml(email)}</button>`).join('')}</div>
+          </div>`
         : '';
 
       card.innerHTML = `
@@ -1188,13 +1259,13 @@ function render() {
         <div class="host-desc">${host.desc}</div>
         ${linksHtml ? `<div class="host-links">${linksHtml}</div>` : ''}
         <div class="student-area">
-          <div class="student-label">Nominate a student</div>
+          <div class="student-label">Nominate a student for this host</div>
           <div class="student-input-row">
-            <input type="email" class="student-email-input" list="studentHints" placeholder="Enter one or more student emails (comma or space separated)" data-key="${key}">
-            <button class="btn-add" data-key="${key}">+ Nominate</button>
+            <input type="email" class="student-email-input" list="studentHints" placeholder="Student email address" data-key="${key}">
+            <button class="btn-add" data-key="${key}">Add</button>
           </div>
           ${quickAddHtml}
-          ${tagsHtml ? `<div class="student-tags">${tagsHtml}</div>` : ''}
+          ${tagsHtml}
         </div>
       `;
       section.appendChild(card);
