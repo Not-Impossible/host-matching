@@ -645,7 +645,7 @@
             <option value="all">All Subjects</option>
           </select>
           <input type="text" class="search-input" id="searchInput" placeholder="Search hosts, companies…">
-          <span class="badge" id="matchCount">0 matches</span>
+
           <button class="btn btn-outline" id="clearAllBtn" title="Clear all student emails">Clear All</button>
         </div>
       </div>
@@ -981,7 +981,7 @@ function render() {
 
   if (subjectOrder.length === 0) {
     container.innerHTML = '<div class="empty-state"><p>No hosts match your search.</p></div>';
-    document.getElementById('matchCount').textContent = '0 matches';
+
     // Still update export bar so nomination count persists even with no visible hosts
     const exportBar = document.getElementById('exportBar');
     if (totalAssigned > 0) {
@@ -1043,7 +1043,6 @@ function render() {
     container.appendChild(section);
   });
 
-  document.getElementById('matchCount').textContent = `${totalVisible} host${totalVisible !== 1 ? 's' : ''}`;
 
   // Export bar summary
   const exportBar = document.getElementById('exportBar');
