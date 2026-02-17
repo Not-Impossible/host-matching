@@ -639,6 +639,7 @@
     .host-card { break-inside: avoid; }
   }
 </style>
+<script src="linkedin-directory.js"></script>
 </head>
 <body>
 
@@ -1028,8 +1029,9 @@ function render() {
       const card = document.createElement('div');
       card.className = 'host-card' + (emails.length > 0 ? ' has-students' : '');
 
+      const linkedinUrl = getLinkedinUrlForHost(host);
       const linksHtml = [
-        host.linkedin ? '<a href="#">LinkedIn ↗</a>' : '',
+        linkedinUrl ? `<a href="${linkedinUrl}" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a>` : '',
         host.website ? `<a href="https://${host.website}" target="_blank">${host.website} ↗</a>` : ''
       ].filter(Boolean).join('');
 
