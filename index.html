@@ -632,7 +632,8 @@
       <div class="step-label step-toggle" id="step1Toggle">Step 1 — About you<span class="step-chevron"></span></div>
       <div class="step-content" id="step1Content">
         <div class="controls" style="margin-bottom:0.6rem;">
-          <input type="text" class="search-input" id="teacherName" placeholder="Your name" style="max-width:200px;">
+          <input type="text" class="search-input" id="teacherName" placeholder="Your name" style="max-width:220px;">
+          <input type="email" class="search-input" id="teacherEmail" placeholder="Your email" style="max-width:220px;">
           <input type="text" class="search-input" id="teacherSchool" placeholder="School / university" style="max-width:220px;">
         </div>
       </div>
@@ -1121,8 +1122,10 @@ const ZAPIER_WEBHOOK = 'https://hooks.zapier.com/hooks/catch/15285814/uc41hx8/';
 
 async function submitToAirtable() {
   const teacherName = document.getElementById('teacherName').value.trim();
+  const teacherEmail = document.getElementById('teacherEmail').value.trim();
   const teacherSchool = document.getElementById('teacherSchool').value.trim();
   if (!teacherName) { showToast('Please enter your name first'); document.getElementById('teacherName').focus(); return; }
+  if (!teacherEmail) { showToast('Please enter your email'); document.getElementById('teacherEmail').focus(); return; }
   if (!teacherSchool) { showToast('Please enter your school / university'); document.getElementById('teacherSchool').focus(); return; }
 
   const matches = [];
@@ -1136,6 +1139,7 @@ async function submitToAirtable() {
         subject: host.subject,
         student_email: email,
         submitted_by: teacherName,
+        submitted_by_email: teacherEmail,
         school: teacherSchool
       });
     });
