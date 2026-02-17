@@ -1535,6 +1535,11 @@ function setBrowsingMode() {
     });
     hasAutoCollapsedForBrowse = true;
   }
+
+  // Reset when user scrolls back up so steps re-collapse on next scroll down
+  if (!shouldCompact) {
+    hasAutoCollapsedForBrowse = false;
+  }
 }
 
 // ── Init ──
