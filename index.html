@@ -96,6 +96,14 @@
     padding: 0.35rem 0.6rem;
     border: 1px solid rgba(255,255,255,0.25);
     border-radius: 999px;
+    position: relative;
+  }
+
+  .subject-filter-toggle {
+    width: 100%;
+    padding: 0.6rem 1rem;
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: var(--radius);
     background: rgba(255,255,255,0.08);
     color: white;
     font-size: 0.78rem;
@@ -1454,6 +1462,19 @@ document.getElementById('searchInput').addEventListener('input', updateStepSumma
 
 
 
+
+subjectFilterToggle.addEventListener('click', () => {
+  const isOpen = subjectFilterWrap.classList.toggle('open');
+  subjectFilterToggle.setAttribute('aria-expanded', String(isOpen));
+});
+
+document.addEventListener('click', (e) => {
+  if (!subjectFilterWrap.contains(e.target)) {
+    subjectFilterWrap.classList.remove('open');
+    subjectFilterToggle.setAttribute('aria-expanded', 'false');
+  }
+});
+
 let hasAutoCollapsedForBrowse = false;
 
 function setBrowsingMode() {
@@ -1476,6 +1497,7 @@ function setBrowsingMode() {
 // ── Init ──
 loadState();
 setupCollapsible();
+updateSubjectFilterLabel();
 render();
 setBrowsingMode();
 window.addEventListener('scroll', setBrowsingMode, { passive: true });
