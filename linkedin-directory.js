@@ -287,7 +287,8 @@ function normalizeLinkedinValue(value) {
   const cleanValue = (value || '').trim();
   if (!cleanValue || cleanValue.toUpperCase() === 'NA') return '';
   if (!/^https?:\/\//i.test(cleanValue)) return '';
-  return cleanValue;
+
+  return cleanValue.replace(/^http:\/\/(www\.)?linkedin\.com/i, 'https://www.linkedin.com');
 }
 
 function normalizeLookupKey(value) {
@@ -306,7 +307,7 @@ const LINKEDIN_DIRECTORY = (() => {
   LINKEDIN_DIRECTORY_TSV.split('\n').slice(1).forEach(line => {
     const [name = '', company = '', url = ''] = line.split('\t');
     const cleanUrl = normalizeLinkedinValue(url);
-    if (!cleanUrl || cleanUrl.toUpperCase() === 'NA') return;
+    if (!cleanUrl) return;
 
     const nameKey = normalizeLookupKey(name);
     const companyKey = normalizeLookupKey(company);
