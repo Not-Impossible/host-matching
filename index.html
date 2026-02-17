@@ -1004,7 +1004,7 @@ function render() {
     // Still update export bar so nomination count persists even with no visible hosts
     const exportBar = document.getElementById('exportBar');
     if (totalAssigned > 0) {
-      document.getElementById('exportSummary').innerHTML = `<strong>${totalAssigned}</strong> student${totalAssigned !== 1 ? 's' : ''} nominated`;
+      document.getElementById('exportSummary').innerHTML = `<strong>${totalAssigned}</strong> nomination${totalAssigned !== 1 ? 's' : ''}`;
     } else {
       document.getElementById('exportSummary').textContent = 'Nominate students above, then submit';
     }
@@ -1066,7 +1066,7 @@ function render() {
   // Export bar summary
   const exportBar = document.getElementById('exportBar');
   if (totalAssigned > 0) {
-    document.getElementById('exportSummary').innerHTML = `<strong>${totalAssigned}</strong> student${totalAssigned !== 1 ? 's' : ''} nominated`;
+    document.getElementById('exportSummary').innerHTML = `<strong>${totalAssigned}</strong> nomination${totalAssigned !== 1 ? 's' : ''}`;
   } else {
     document.getElementById('exportSummary').textContent = 'Nominate students above, then submit';
   }
@@ -1086,7 +1086,7 @@ document.getElementById('hostList').addEventListener('click', (e) => {
     studentAssignments[key].push(email);
     saveState();
     render();
-    showToast('Student nominated ✓');
+    showToast('Nomination added ✓');
   }
 
   // Remove tag
