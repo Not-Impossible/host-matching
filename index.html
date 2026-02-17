@@ -962,7 +962,9 @@ function render() {
   container.innerHTML = '';
 
   let totalVisible = 0;
-  let totalAssigned = 0;
+
+  // Count ALL nominations across every host, not just the visible/filtered ones
+  const totalAssigned = Object.values(studentAssignments).reduce((sum, emails) => sum + emails.length, 0);
 
   const grouped = {};
   hosts.forEach(h => {
@@ -980,6 +982,13 @@ function render() {
   if (subjectOrder.length === 0) {
     container.innerHTML = '<div class="empty-state"><p>No hosts match your search.</p></div>';
     document.getElementById('matchCount').textContent = '0 matches';
+    // Still update export bar so nomination count persists even with no visible hosts
+    const exportBar = document.getElementById('exportBar');
+    if (totalAssigned > 0) {
+      document.getElementById('exportSummary').innerHTML = `<strong>${totalAssigned}</strong> student${totalAssigned !== 1 ? 's' : ''} nominated`;
+    } else {
+      document.getElementById('exportSummary').textContent = 'Nominate students above, then submit';
+    }
     return;
   }
 
@@ -996,7 +1005,6 @@ function render() {
       const key = hostKey(host);
       const emails = studentAssignments[key] || [];
       totalVisible++;
-      totalAssigned += emails.length;
 
       const card = document.createElement('div');
       card.className = 'host-card' + (emails.length > 0 ? ' has-students' : '');
