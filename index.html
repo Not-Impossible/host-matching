@@ -95,6 +95,12 @@
     background-position: right 1rem center;
   }
 
+  .subject-select[multiple] {
+    appearance: auto;
+    background-image: none;
+    min-height: 90px;
+  }
+
   .subject-select option { color: var(--ni-navy); background: white; }
 
   .search-input {
@@ -694,9 +700,7 @@
       <div class="step-label step-toggle" id="step2Toggle">Step 2 — Browse hosts and nominate students<span class="step-summary" id="step2Summary"></span><span class="step-chevron"></span></div>
       <div class="step-content" id="step2Content">
         <div class="controls">
-          <select class="subject-select" id="subjectFilter">
-            <option value="all">All Subjects</option>
-          </select>
+          <select class="subject-select" id="subjectFilter" multiple aria-label="Filter by one or more subjects"></select>
           <input type="text" class="search-input" id="searchInput" placeholder="Search hosts, companies…">
 
           <button class="btn btn-outline" id="clearAllBtn" title="Clear all student emails">Clear All</button>
@@ -1060,9 +1064,13 @@ subjects.forEach(s => {
   subjectFilter.appendChild(opt);
 });
 
+function getSelectedSubjects() {
+  return Array.from(subjectFilter.selectedOptions).map(option => option.value);
+}
+
 // ── Render ──
 function render() {
-  const filter = subjectFilter.value;
+  const selectedSubjects = getSelectedSubjects();
   const search = document.getElementById('searchInput').value.toLowerCase().trim();
   const container = document.getElementById('hostList');
   container.innerHTML = '';
@@ -1074,7 +1082,7 @@ function render() {
 
   const grouped = {};
   hosts.forEach(h => {
-    if (filter !== 'all' && h.subject !== filter) return;
+    if (selectedSubjects.length > 0 && !selectedSubjects.includes(h.subject)) return;
     if (search) {
       const haystack = `${h.name} ${h.company} ${h.desc}`.toLowerCase();
       if (!haystack.includes(search)) return;
@@ -1322,7 +1330,8 @@ function updateStepSummaries() {
   const subject = document.getElementById('subjectFilter');
   const search = document.getElementById('searchInput').value.trim();
   const filterParts = [];
-  if (subject.value !== 'all') filterParts.push(subject.options[subject.selectedIndex].text);
+  const selectedSubjects = Array.from(subject.selectedOptions).map(option => option.textContent);
+  if (selectedSubjects.length > 0) filterParts.push(selectedSubjects.join(', '));
   if (search) filterParts.push('"' + search + '"');
   step2Summary.textContent = filterParts.length ? filterParts.join(' · ') : '';
 }
