@@ -394,13 +394,224 @@
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+  /* Collapsible step sections */
+  .step-section {
+    margin-bottom: 0.15rem;
+  }
+
+  .step-toggle {
+    cursor: default;
+  }
+
+  .step-chevron {
+    display: none;
+  }
+
+  .step-content {
+    max-height: 500px;
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+    opacity: 1;
+  }
+
+  .step-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
+  }
+
   /* Responsive */
   @media (max-width: 640px) {
-    .header { padding: 1.25rem 1rem 1rem; }
-    .main { padding: 1rem 1rem 4rem; }
-    .controls { flex-direction: column; }
-    .subject-select, .search-input { min-width: 100%; }
-    .host-top { flex-direction: column; gap: 0.25rem; }
+    .header {
+      padding: 1rem 1rem 0.75rem;
+      position: relative;
+    }
+
+    .header h1 {
+      font-size: 1.3rem;
+    }
+
+    .header-intro {
+      font-size: 0.78rem;
+      margin-bottom: 0.5rem;
+      display: none;
+    }
+
+    .main {
+      padding: 0.75rem 0.75rem 5.5rem;
+    }
+
+    /* Collapsible step toggles */
+    .step-toggle {
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .step-chevron {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      text-align: center;
+      line-height: 20px;
+      transition: transform 0.3s ease;
+      flex-shrink: 0;
+    }
+
+    .step-chevron::after {
+      content: '▾';
+      font-size: 0.75rem;
+    }
+
+    .collapsed + .step-section .step-toggle .step-chevron,
+    .step-content.collapsed ~ .step-chevron {
+      transform: rotate(-90deg);
+    }
+
+    .step-toggle.is-collapsed .step-chevron {
+      transform: rotate(-90deg);
+    }
+
+    /* Controls stack vertically */
+    .controls {
+      flex-direction: column;
+    }
+
+    .subject-select, .search-input {
+      min-width: 100%;
+      min-height: 44px;
+      font-size: 16px;
+      padding: 0.65rem 1rem;
+    }
+
+    .search-input[style*="max-width"] {
+      max-width: 100% !important;
+    }
+
+    /* Touch-friendly buttons */
+    .btn, .btn-outline {
+      min-height: 44px;
+      font-size: 0.88rem;
+      padding: 0.65rem 1.2rem;
+      width: 100%;
+      text-align: center;
+    }
+
+    /* Host cards */
+    .host-card {
+      padding: 0.9rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .host-top {
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .host-name {
+      font-size: 1rem;
+    }
+
+    .host-company {
+      font-size: 0.82rem;
+    }
+
+    .host-desc {
+      font-size: 0.85rem;
+    }
+
+    /* Touch-friendly student input area */
+    .student-input-row {
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .student-email-input {
+      min-height: 44px;
+      font-size: 16px;
+      padding: 0.6rem 0.75rem;
+      width: 100%;
+    }
+
+    .btn-add {
+      min-height: 44px;
+      font-size: 0.88rem;
+      padding: 0.6rem 1rem;
+      width: 100%;
+      border-radius: 6px;
+    }
+
+    .student-label {
+      font-size: 0.75rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .student-tags {
+      gap: 0.4rem;
+    }
+
+    .student-tag {
+      font-size: 0.78rem;
+      padding: 0.35rem 0.7rem;
+    }
+
+    .student-tag .remove {
+      font-size: 0.95rem;
+      padding: 0 0.15rem;
+    }
+
+    /* Host links */
+    .host-links {
+      flex-wrap: wrap;
+    }
+
+    .host-links a {
+      font-size: 0.8rem;
+      padding: 0.2rem 0;
+    }
+
+    /* Subject heading */
+    .subject-heading {
+      font-size: 1.05rem;
+      padding: 0.5rem 0;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+    }
+
+    /* Badge */
+    .badge {
+      font-size: 0.72rem;
+    }
+
+    /* Export bar */
+    .export-bar {
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      text-align: center;
+    }
+
+    .export-bar .btn-coral {
+      width: 100%;
+      min-height: 48px;
+      font-size: 1rem !important;
+      padding: 0.75rem 1rem !important;
+    }
+
+    .export-summary {
+      font-size: 0.82rem;
+    }
+
+    /* Toast */
+    .toast {
+      bottom: 6rem;
+      max-width: calc(100vw - 2rem);
+      font-size: 0.85rem;
+    }
   }
 
   /* Print */
@@ -416,20 +627,28 @@
 <div class="header">
   <div class="header-inner">
     <h1>Not Impossible — <span>Host Matching</span></h1>
-    <p>Nominate students who are unlikely to have the family connections so often needed to find work experience on their own. Every host below has volunteered to host a one-hour, one-on-one microplacement — and 94% of students who've done one say they feel more optimistic about their future. Match your students to someone who could open a door for them.</p>
-    <div class="step-label">Step 1 — About you</div>
-    <div class="controls" style="margin-bottom:0.6rem;">
-      <input type="text" class="search-input" id="teacherName" placeholder="Your name" style="max-width:200px;">
-      <input type="text" class="search-input" id="teacherSchool" placeholder="School / university" style="max-width:220px;">
+    <p class="header-intro">Nominate students who are unlikely to have the family connections so often needed to find work experience on their own. Every host below has volunteered to host a one-hour, one-on-one microplacement — and 94% of students who've done one say they feel more optimistic about their future. Match your students to someone who could open a door for them.</p>
+    <div class="step-section">
+      <div class="step-label step-toggle" id="step1Toggle">Step 1 — About you<span class="step-chevron"></span></div>
+      <div class="step-content" id="step1Content">
+        <div class="controls" style="margin-bottom:0.6rem;">
+          <input type="text" class="search-input" id="teacherName" placeholder="Your name" style="max-width:200px;">
+          <input type="text" class="search-input" id="teacherSchool" placeholder="School / university" style="max-width:220px;">
+        </div>
+      </div>
     </div>
-    <div class="step-label">Step 2 — Browse hosts and nominate students</div>
-    <div class="controls">
-      <select class="subject-select" id="subjectFilter">
-        <option value="all">All Subjects</option>
-      </select>
-      <input type="text" class="search-input" id="searchInput" placeholder="Search hosts, companies…">
-      <span class="badge" id="matchCount">0 matches</span>
-      <button class="btn btn-outline" id="clearAllBtn" title="Clear all student emails">Clear All</button>
+    <div class="step-section">
+      <div class="step-label step-toggle" id="step2Toggle">Step 2 — Browse hosts and nominate students<span class="step-chevron"></span></div>
+      <div class="step-content" id="step2Content">
+        <div class="controls">
+          <select class="subject-select" id="subjectFilter">
+            <option value="all">All Subjects</option>
+          </select>
+          <input type="text" class="search-input" id="searchInput" placeholder="Search hosts, companies…">
+          <span class="badge" id="matchCount">0 matches</span>
+          <button class="btn btn-outline" id="clearAllBtn" title="Clear all student emails">Clear All</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -968,8 +1187,45 @@ function showToast(msg) {
   setTimeout(() => toast.classList.remove('show'), 2000);
 }
 
+// ── Collapsible step sections (mobile) ──
+function setupCollapsible() {
+  const isMobile = window.innerWidth <= 640;
+  const step1Toggle = document.getElementById('step1Toggle');
+  const step1Content = document.getElementById('step1Content');
+  const step2Toggle = document.getElementById('step2Toggle');
+  const step2Content = document.getElementById('step2Content');
+
+  if (isMobile) {
+    // Collapse step 1 by default on mobile (user fills once)
+    step1Content.classList.add('collapsed');
+    step1Toggle.classList.add('is-collapsed');
+  } else {
+    step1Content.classList.remove('collapsed');
+    step1Toggle.classList.remove('is-collapsed');
+    step2Content.classList.remove('collapsed');
+    step2Toggle.classList.remove('is-collapsed');
+  }
+}
+
+document.querySelectorAll('.step-toggle').forEach(toggle => {
+  toggle.addEventListener('click', () => {
+    if (window.innerWidth > 640) return;
+    const content = toggle.nextElementSibling;
+    content.classList.toggle('collapsed');
+    toggle.classList.toggle('is-collapsed');
+  });
+});
+
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 640) {
+    document.querySelectorAll('.step-content').forEach(c => c.classList.remove('collapsed'));
+    document.querySelectorAll('.step-toggle').forEach(t => t.classList.remove('is-collapsed'));
+  }
+});
+
 // ── Init ──
 loadState();
+setupCollapsible();
 render();
 </script>
 </body>
