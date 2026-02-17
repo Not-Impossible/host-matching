@@ -68,6 +68,9 @@
     font-size: 0.85rem;
     opacity: 0.7;
     margin-bottom: 1rem;
+    max-height: 200px;
+    overflow: hidden;
+    transition: max-height 0.25s ease, opacity 0.25s ease, margin-bottom 0.25s ease;
   }
 
   /* Controls row */
@@ -468,7 +471,10 @@
     }
 
     body.browsing-mode .header-intro {
-      display: none;
+      max-height: 0;
+      opacity: 0;
+      margin-bottom: 0;
+      overflow: hidden;
     }
 
     body.browsing-mode .main {
@@ -1513,7 +1519,9 @@ document.getElementById('searchInput').addEventListener('input', updateStepSumma
 let hasAutoCollapsedForBrowse = false;
 
 function setBrowsingMode() {
-  const shouldCompact = window.innerWidth > 640 && window.scrollY > 180;
+  const isCurrentlyBrowsing = document.body.classList.contains('browsing-mode');
+  const threshold = isCurrentlyBrowsing ? 50 : 180;
+  const shouldCompact = window.innerWidth > 640 && window.scrollY > threshold;
   document.body.classList.toggle('browsing-mode', shouldCompact);
 
   if (shouldCompact && !hasAutoCollapsedForBrowse) {
