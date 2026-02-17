@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Not Impossible — Host Matching Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ni-coral: #FF6B5B;
+    --ni-coral-light: #FFF0EE;
+    --ni-coral-mid: #FFD6D1;
+    --ni-navy: #1A2744;
+    --ni-navy-light: #2D3F5E;
+    --ni-slate: #4A5568;
+    --ni-grey: #718096;
+    --ni-light: #F7FAFC;
+    --ni-white: #FFFFFF;
+    --ni-border: #E2E8F0;
+    --ni-green: #48BB78;
+    --ni-green-light: #F0FFF4;
+    --ni-yellow: #ECC94B;
+    --ni-yellow-light: #FFFFF0;
+    --radius: 10px;
+    --shadow-sm: 0 1px 3px rgba(26,39,68,0.08);
+    --shadow-md: 0 4px 14px rgba(26,39,68,0.1);
+    --shadow-lg: 0 10px 30px rgba(26,39,68,0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--ni-light);
+    color: var(--ni-navy);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    background: var(--ni-navy);
+    color: white;
+    padding: 2rem 2rem 1.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(26,39,68,0.3);
+  }
+
+  .header-inner {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  .header h1 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 0.15rem;
+  }
+
+  .header h1 span { color: var(--ni-coral); }
+
+  .header p {
+    font-size: 0.85rem;
+    opacity: 0.7;
+    margin-bottom: 1rem;
+  }
+
+  /* Controls row */
+  .controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .subject-select {
+    flex: 1;
+    min-width: 220px;
+    padding: 0.6rem 1rem;
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.08);
+    color: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23fff' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+  }
+
+  .subject-select option { color: var(--ni-navy); background: white; }
+
+  .search-input {
+    flex: 1;
+    min-width: 180px;
+    padding: 0.6rem 1rem;
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.08);
+    color: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+  }
+
+  .search-input::placeholder { color: rgba(255,255,255,0.4); }
+
+  .btn {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .btn-coral {
+    background: var(--ni-coral);
+    color: white;
+  }
+  .btn-coral:hover { background: #e85a4a; transform: translateY(-1px); }
+
+  .btn-outline {
+    background: transparent;
+    color: white;
+    border: 2px solid rgba(255,255,255,0.25);
+  }
+  .btn-outline:hover { border-color: rgba(255,255,255,0.5); }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: var(--ni-coral);
+    color: white;
+    padding: 0.25rem 0.65rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .step-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ni-coral);
+    margin-bottom: 0.4rem;
+    margin-top: 0.75rem;
+  }
+
+  .step-label-dark {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ni-coral);
+  }
+
+  /* Main */
+  .main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 1.5rem 2rem 4rem;
+  }
+
+  /* Subject section */
+  .subject-section {
+    margin-bottom: 2rem;
+  }
+
+  .subject-heading {
+    font-family: 'Fraunces', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--ni-navy);
+    padding: 0.6rem 0;
+    margin-bottom: 0.75rem;
+    border-bottom: 3px solid var(--ni-coral);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .subject-count {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--ni-grey);
+  }
+
+  /* Host card */
+  .host-card {
+    background: var(--ni-white);
+    border-radius: var(--radius);
+    padding: 1rem 1.2rem;
+    margin-bottom: 0.6rem;
+    box-shadow: var(--shadow-sm);
+    border-left: 4px solid transparent;
+    transition: all 0.2s;
+  }
+
+  .host-card:hover {
+    box-shadow: var(--shadow-md);
+    border-left-color: var(--ni-coral);
+  }
+
+  .host-card.has-students {
+    border-left-color: var(--ni-green);
+    background: var(--ni-green-light);
+  }
+
+  .host-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .host-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--ni-navy);
+  }
+
+  .host-company {
+    font-weight: 500;
+    font-size: 0.8rem;
+    color: var(--ni-coral);
+  }
+
+  .host-desc {
+    font-size: 0.82rem;
+    color: var(--ni-slate);
+    margin-bottom: 0.6rem;
+    line-height: 1.5;
+  }
+
+  .host-links {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.7rem;
+  }
+
+  .host-links a {
+    font-size: 0.75rem;
+    color: var(--ni-grey);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .host-links a:hover { color: var(--ni-coral); }
+
+  /* Student input area */
+  .student-area {
+    border-top: 1px solid var(--ni-border);
+    padding-top: 0.6rem;
+    margin-top: 0.5rem;
+  }
+
+  .student-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ni-grey);
+    margin-bottom: 0.35rem;
+  }
+
+  .student-input-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .student-email-input {
+    flex: 1;
+    padding: 0.45rem 0.7rem;
+    border: 1.5px solid var(--ni-border);
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    transition: border-color 0.2s;
+  }
+  .student-email-input:focus {
+    outline: none;
+    border-color: var(--ni-coral);
+  }
+
+  .btn-add {
+    padding: 0.45rem 0.8rem;
+    background: var(--ni-navy);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: background 0.2s;
+  }
+  .btn-add:hover { background: var(--ni-navy-light); }
+
+  .student-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+  }
+
+  .student-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: var(--ni-coral-light);
+    color: var(--ni-navy);
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .student-tag .remove {
+    cursor: pointer;
+    color: var(--ni-coral);
+    font-weight: 700;
+    font-size: 0.85rem;
+    line-height: 1;
+    margin-left: 0.15rem;
+  }
+  .student-tag .remove:hover { color: #c0392b; }
+
+  /* Export panel */
+  .export-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--ni-navy);
+    border-top: 3px solid var(--ni-coral);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.25rem;
+    box-shadow: 0 -8px 30px rgba(26,39,68,0.25);
+    z-index: 99;
+  }
+
+  .export-summary {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.7);
+  }
+  .export-summary strong { color: white; }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--ni-grey);
+  }
+  .empty-state p { font-size: 0.9rem; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ni-navy);
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border-radius: var(--radius);
+    font-size: 0.82rem;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 200;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .header { padding: 1.25rem 1rem 1rem; }
+    .main { padding: 1rem 1rem 4rem; }
+    .controls { flex-direction: column; }
+    .subject-select, .search-input { min-width: 100%; }
+    .host-top { flex-direction: column; gap: 0.25rem; }
+  }
+
+  /* Print */
+  @media print {
+    .header { position: static; }
+    .export-bar { display: none; }
+    .host-card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <h1>Not Impossible — <span>Host Matching</span></h1>
+    <p>Nominate students who don't have the family connections to find work experience on their own. Every host below has volunteered for a one-hour, one-on-one microplacement — and 94% of students who've done one say they feel more optimistic about their future. Match your students to someone who could open a door for them.</p>
+    <div class="step-label">Step 1 — About you</div>
+    <div class="controls" style="margin-bottom:0.6rem;">
+      <input type="text" class="search-input" id="teacherName" placeholder="Your name" style="max-width:200px;">
+      <input type="text" class="search-input" id="teacherSchool" placeholder="School / university" style="max-width:220px;">
+    </div>
+    <div class="step-label">Step 2 — Browse hosts and nominate students</div>
+    <div class="controls">
+      <select class="subject-select" id="subjectFilter">
+        <option value="all">All Subjects</option>
+      </select>
+      <input type="text" class="search-input" id="searchInput" placeholder="Search hosts, companies…">
+      <span class="badge" id="matchCount">0 matches</span>
+      <button class="btn btn-outline" id="clearAllBtn" title="Clear all student emails">Clear All</button>
+    </div>
+  </div>
+</div>
+
+<div class="main" id="hostList"></div>
+
+<div class="export-bar" id="exportBar">
+  <span class="step-label-dark">Step 3 —</span>
+  <span class="export-summary" id="exportSummary">Nominate students above, then submit</span>
+  <button class="btn btn-coral" id="submitBtn" style="padding:0.75rem 2rem; font-size:0.95rem;">Submit to Not Impossible ↑</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Host Data ──
+const hosts = [
+  // BUSINESS STUDIES & ECONOMICS
+  {name:"Emma Edwards",company:"Yoyo Design",desc:"Financial controller at a digital agency — manages budgets, invoices, and payments to keep the business profitable while the creative team does their thing.",subject:"Business Studies & Economics",linkedin:true,website:"yoyodesign.com"},
+  {name:"Jenny Kitchen",company:"Yoyo Design",desc:"CEO of a brand and digital agency — looks after everything from finance to sales to team culture, and also runs a charity helping businesses cut carbon.",subject:"Business Studies & Economics",linkedin:true,website:"yoyodesign.com"},
+  {name:"Joran Mendel",company:"Local Partnerships",desc:"Runs a data analytics team to help public sector organisations solve problems and improve how they work.",subject:"Business Studies & Economics",linkedin:true},
+  {name:"Lydia Gough",company:"Aardman",desc:"Finds new business partnerships for Aardman (the studio behind Wallace & Gromit) and builds relationships with creative agencies.",subject:"Business Studies & Economics",linkedin:true,website:"aardman.com"},
+  {name:"Georgia Horne",company:"IOP Publishing",desc:"Turns financial data into plain language so non-finance teams can make better decisions — works with managers to spot problems and plan ahead.",subject:"Business Studies & Economics",linkedin:true,website:"ioppublishing.org"},
+  {name:"Sarah Dennis",company:"Aer Studios",desc:"Promotes a digital agency and makes sure clients have a great experience working with them — a mix of marketing and relationship management.",subject:"Business Studies & Economics",linkedin:true,website:"aerstudios.co.uk"},
+  {name:"Lizzy Rees",company:"Bath Spa University",desc:"Runs a business network for Bath Spa University — connects the university with local businesses and communities, and hosts networking events.",subject:"Business Studies & Economics",linkedin:true,website:"bathspa.ac.uk"},
+  {name:"Jon Payne",company:"RevOps Mentor",desc:"Helps sales and marketing teams build better systems to keep potential customers interested — a mix of people skills and technology.",subject:"Business Studies & Economics",linkedin:true},
+  {name:"David Turrall",company:"That Works",desc:"A qualified accountant who helps retail businesses run better by analysing data and showing leaders the financial impact of their decisions.",subject:"Business Studies & Economics",linkedin:true},
+  {name:"Sally Stevens-Holmyard",company:"IOP Publishing",desc:"Manages the banking team at a science publisher — processes payments to suppliers worldwide, reconciles bank accounts, and is currently helping switch to a new finance system.",subject:"Business Studies & Economics",website:"ioppublishing.org"},
+  {name:"Ahilen Chavez",company:"AgencyUK",desc:"Works as an account manager at a marketing agency, helping clients create memorable brand experiences.",subject:"Business Studies & Economics",linkedin:true,website:"agencyuk.com"},
+  {name:"Raluca Tudor",company:"IVC",desc:"Works in finance at Independent Vet Care, helping business leaders make the right financial decisions to grow the company.",subject:"Business Studies & Economics",linkedin:true,website:"ivcevidensia.co.uk"},
+  {name:"Krissy Constable",company:"IOP Publishing",desc:"Runs the behind-the-scenes operations for a global sales team — sets targets, tracks progress, and makes sure systems work smoothly for salespeople worldwide.",subject:"Business Studies & Economics",linkedin:true,website:"ioppublishing.org"},
+  {name:"Lauren Tiza-Smith",company:"IOP Publishing",desc:"Improves how HR works behind the scenes — makes sure processes run smoothly, people get paid correctly, and benefits are sorted.",subject:"Business Studies & Economics",linkedin:true,website:"ioppublishing.org"},
+  {name:"Gemma Hougham",company:"IOP Publishing",desc:"Plans and runs marketing campaigns across digital and traditional media for a science publisher.",subject:"Business Studies & Economics",website:"ioppublishing.org"},
+  {name:"Hannah Hughes",company:"IOP Publishing",desc:"Makes sure everyone in the company gets paid correctly and on time, manages HR systems, and leads big projects like rolling out new benefits or setting up overseas offices.",subject:"Business Studies & Economics",linkedin:true,website:"ioppublishing.org"},
+  {name:"Miranda Round",company:"graceandgreen",desc:"Head of Marketing at a sustainable period care brand — shapes the brand voice, launches campaigns, and pushes to make hormonal health part of bigger conversations.",subject:"Business Studies & Economics",linkedin:true,website:"graceandgreen.co"},
+  {name:"Laily Mansourpour",company:"AgencyUK",desc:"Works in a marketing agency talking to clients, working out costs, and booking in the creative teams to produce the work.",subject:"Business Studies & Economics",linkedin:true,website:"agencyuk.com"},
+  {name:"Richard Price",company:"Pointer Consultancy",desc:"Runs a small consultancy that helps other businesses improve what they do — a mix of strategy, problem-solving, and hands-on advice.",subject:"Business Studies & Economics",linkedin:true,website:"pointerconsultancygroup.co.uk"},
+  {name:"Beth Squibb",company:"IOP Publishing",desc:"Manages a team running marketing campaigns for 100+ scientific journals — creates strategies to attract researchers worldwide to publish their work.",subject:"Business Studies & Economics",website:"ioppublishing.org"},
+  {name:"Claire Webber",company:"IOP Publishing",desc:"Leads content and engagement marketing for 100+ scientific journals — plans creative campaigns to attract researchers from around the world.",subject:"Business Studies & Economics",linkedin:true,website:"ioppublishing.org"},
+  {name:"Ben Hughes",company:"Pointer Consultancy",desc:"A business consultant who helps companies win work, manage projects, and become more sustainable.",subject:"Business Studies & Economics",linkedin:true,website:"pointerconsultancygroup.co.uk"},
+  {name:"Devanshi Chengappa",company:"Pointer Consultancy",desc:"Helps small and medium businesses grow through strategy and grant applications — a daily mix of problem-solving and connecting with people about their passions.",subject:"Business Studies & Economics",linkedin:true,website:"pointerconsultancygroup.co.uk"},
+  {name:"Emma Fry",company:"Pointer Consultancy",desc:"Gives advice to companies to help them solve problems — whether they're losing money, struggling with customers, or trying to go green.",subject:"Business Studies & Economics",linkedin:true,website:"pointerconsultancygroup.co.uk"},
+  {name:"Charles Ross-Smith",company:"Pointer Consultancy",desc:"Co-founded a small consultancy — fixes other companies' problems while running his own business at the same time.",subject:"Business Studies & Economics",linkedin:true,website:"pointerconsultancygroup.co.uk"},
+  {name:"Chloe Tregaskes",company:"AgencyUK",desc:"Runs the client services department at a marketing agency — works with clients to understand their needs, then coordinates internal teams to deliver great work.",subject:"Business Studies & Economics",linkedin:true,website:"agencyuk.com"},
+  {name:"Brad Hayward",company:"When in Rome Wine",desc:"Manages the supply chain for a wine company — oversees everything from sourcing wines in Italy to shipping orders to customers.",subject:"Business Studies & Economics",linkedin:true,website:"wheninromewine.com"},
+  {name:"Zoe Palmer",company:"AgencyUK",desc:"Plans where adverts appear online, builds campaigns, analyses how they perform, and reports on results — needs an eye for detail and a creative mind.",subject:"Business Studies & Economics",linkedin:true,website:"agencyuk.com"},
+  {name:"Lauren Buys",company:"AgencyUK",desc:"Manages client projects at a marketing agency — connects all the different teams to bring a client's creative vision to life.",subject:"Business Studies & Economics",linkedin:true,website:"agencyuk.com"},
+  {name:"Chris Moody",company:"AgencyUK",desc:"Does marketing strategy — helps businesses figure out how to stand out, get noticed, and make people care about them.",subject:"Business Studies & Economics",linkedin:true,website:"agencyuk.com"},
+  {name:"Lizzie Coles",company:"AgencyUK",desc:"Oversees the overall performance of a marketing agency — sets goals, manages finances, and works with senior leaders to grow the business.",subject:"Business Studies & Economics",linkedin:true,website:"agencyuk.com"},
+  {name:"Jakub Żurawski",company:"AgencyUK",desc:"Manages paid advertising campaigns across search, social media, and outdoor media — works out how to get the best results for clients' budgets.",subject:"Business Studies & Economics",linkedin:true,website:"agencyuk.com"},
+  {name:"Chloe Lees",company:"AgencyUK",desc:"A marketing apprentice at an agency — helps manage client budgets, organises timelines, and learns how advertising campaigns come together.",subject:"Business Studies & Economics",linkedin:true,website:"agencyuk.com"},
+  {name:"Jacci Marcus",company:"Great Western Credit Union",desc:"Leads sales, marketing, and digital for a community finance organisation — helps people borrow and save money safely as an alternative to banks.",subject:"Business Studies & Economics",linkedin:true,website:"greatwesterncu.org"},
+  {name:"Colin McDougall",company:"Great Western Credit Union",desc:"Uses marketing and finance experience to help a credit union grow and stay financially stable long-term.",subject:"Business Studies & Economics",linkedin:true,website:"greatwesterncu.org"},
+  {name:"Kay Geoghegan",company:"Tyler Grange",desc:"Helps businesses put their employees, communities, and the environment before profits — shows how companies can make the world better for future generations.",subject:"Business Studies & Economics",linkedin:true,website:"tylergrange.co.uk"},
+  {name:"Haris Alexandrou",company:"Varn",desc:"Works in the data team at a marketing agency — makes sure websites are legally compliant, analyses data trends, and sets up custom tracking for clients.",subject:"Business Studies & Economics",linkedin:true,website:"varn.co.uk"},
+  {name:"Jess Melaragni",company:"Varn",desc:"Manages SEO strategies for 4-6 clients at a time — does technical site audits, keyword research, and tests new ways to help websites rank higher in search results.",subject:"Business Studies & Economics",linkedin:true,website:"varn.co.uk"},
+  {name:"Megan Howden",company:"Yoyo Design",desc:"A project manager who sees websites and brand projects through from start to finish — coordinates teams to deliver quality work on time and budget.",subject:"Business Studies & Economics",linkedin:true,website:"yoyodesign.com"},
+  {name:"Megan Deefholts",company:"Yoyo Design",desc:"A senior project manager at a creative agency — talks to clients, coordinates the internal team, and helps deliver amazing creative projects.",subject:"Business Studies & Economics",linkedin:true,website:"yoyodesign.com"},
+  {name:"Isaac Pritchard",company:"LettUs Grow",desc:"A mix of technical sales and project delivery — works out the engineering specs for selling aeroponic growing equipment, then manages getting it designed, built, and installed.",subject:"Business Studies & Economics",linkedin:true,website:"lettusgrow.com"},
+  {name:"David Fallaize",company:"Ecologi",desc:"Talks to businesses about their sustainability goals, understands their problems, and offers climate-friendly solutions — also has sales targets to hit.",subject:"Business Studies & Economics",linkedin:true,website:"ecologi.com"},
+  {name:"Joshua Rayner",company:"Ecologi",desc:"Helping to scale a business that supports the world in reaching net-zero carbon emissions.",subject:"Business Studies & Economics",linkedin:true,website:"ecologi.com"},
+  {name:"Duniya Moore",company:"Illumo Digital",desc:"CEO responsible for the vision and strategy of a digital agency — makes sure the services they offer actually work for clients.",subject:"Business Studies & Economics",linkedin:true,website:"illumo.digital"},
+  {name:"Katherine Piper",company:"Bristol City Leap",desc:"Makes sure council residents understand and get involved with making their homes more energy efficient.",subject:"Business Studies & Economics",linkedin:true,website:"bristolcityleap.co.uk"},
+  {name:"Tristan Hunt",company:"Bristol City Leap",desc:"Works with a team delivering energy efficiency projects for low-income households in Bristol — helps make homes warmer and cheaper to run.",subject:"Business Studies & Economics",linkedin:true,website:"bristolcityleap.co.uk"},
+  {name:"Faye Ingram",company:"Comotion",desc:"A non-executive director — sits on the board helping set the company's strategy and supporting the managing director.",subject:"Business Studies & Economics",linkedin:true,website:"invivohealthcare.com"},
+  {name:"Beckie Johnson",company:"LettUs Grow",desc:"Finance manager handling bookkeeping, budgeting, and forecasting — involved in day-to-day finances and business planning.",subject:"Business Studies & Economics",linkedin:true,website:"lettusgrow.com"},
+  {name:"Ben Crowther",company:"LettUs Grow",desc:"Started his own business — is the main inventor and engineer and runs a big chunk of the company.",subject:"Business Studies & Economics",linkedin:true,website:"lettusgrow.com"},
+  {name:"Jess",company:"Barefoot Architects",desc:"Operations manager at an architecture studio — keeps the day-to-day business running smoothly.",subject:"Business Studies & Economics",website:"barefootarchitects.co.uk"},
+  {name:"Julie McEver",company:"Local Partnerships",desc:"A senior manager with experience across consulting, tech, charities, and the public sector — leads projects, manages people, and drives organisations forward.",subject:"Business Studies & Economics",linkedin:true,website:"localpartnerships.gov.uk"},
+  {name:"Ruth Latham",company:"Stantec (Hydrock)",desc:"Helps people understand complicated engineering and environmental projects — acts as the main point of contact keeping everything clear and organised.",subject:"Business Studies & Economics",linkedin:true,website:"stantec.com/en"},
+  {name:"Sara Wu",company:"Stantec (Hydrock)",desc:"A digital project coordinator who turns new ideas into real solutions — has worked on everything from launching tech startups to making online spaces safer for kids.",subject:"Business Studies & Economics",linkedin:true,website:"stantec.com/en"},
+  {name:"Emma Colwill",company:"Not Impossible",desc:"Co-founded Not Impossible, a tech-for-good startup helping young people from disadvantaged backgrounds find meaningful careers.",subject:"Business Studies & Economics",linkedin:true,website:"teamnotimpossible.com"},
+  {name:"Ari Cantwell",company:"Coexist",desc:"Leads a charity — sets the direction and manages the organisation.",subject:"Business Studies & Economics",website:"coexistcommunitykitchen.org"},
+  {name:"Simon Holloway",company:"Dynisma",desc:"Commercial Director in the automotive industry — handles sales, data analysis, and business development in motorsport and semiconductors.",subject:"Business Studies & Economics",linkedin:true,website:"dynisma.com"},
+  {name:"Hannah Parkes",company:"Dynisma",desc:"A project manager with 10+ years making things happen across fashion, manufacturing, and high-tech engineering — keeps projects on track and teams coordinated.",subject:"Business Studies & Economics",linkedin:true,website:"dynisma.com"},
+  {name:"Christopher Middlehurst",company:"Dynisma",desc:"A certified project manager who leads teams, solves problems, and makes sure engineering projects get done on time and to a high standard.",subject:"Business Studies & Economics",linkedin:true,website:"dynisma.com"},
+  {name:"Ella Wiles",company:"Bio Leadership",desc:"A leadership consultant helping organisations develop better leaders.",subject:"Business Studies & Economics",linkedin:true,website:"bioleadershipfellowship.org"},
+  {name:"Ruth McMenamin",company:"Canopy & Stars",desc:"Drives sales for a travel brand by supporting 900 independent businesses and producing creative marketing campaigns.",subject:"Business Studies & Economics",linkedin:true,website:"sawdays.co.uk"},
+  {name:"Claire Forgione",company:"When in Rome Wine",desc:"Head of operations and sustainability at a wine company — keeps things running smoothly while driving environmental improvements.",subject:"Business Studies & Economics",linkedin:true,website:"wheninromewine.com"},
+  {name:"James Perry",company:"LettUs Grow",desc:"Commercial lead at an agri-tech company — responsible for sales strategy and business growth.",subject:"Business Studies & Economics",linkedin:true,website:"lettusgrow.com"},
+  {name:"Francesca Santilli",company:"Sawday's",desc:"Handles payroll and benefits coordination plus management accounting — a mix of looking after staff pay and managing finances.",subject:"Business Studies & Economics",linkedin:true,website:"sawdays.co.uk"},
+  {name:"Justine Fox",company:"Canopy & Stars",desc:"Makes sure guests at Canopy & Stars (treehouses, yurts, cabins, and glamping spots) have a fantastic experience.",subject:"Business Studies & Economics",linkedin:true,website:"sawdays.co.uk"},
+
+  // ENGLISH LANGUAGE & LITERATURE
+  {name:"Amy Stobie",company:"AgencyUK",desc:"Founded a 30-person marketing agency 18 years ago — wins new business, manages staff, leads B Corp initiatives, and develops strategy for clients across healthcare and food.",subject:"English Language & Literature",linkedin:true,website:"agencyuk.com"},
+  {name:"Polly Hayes",company:"IOP Publishing",desc:"Investigates whether scientists have cheated in their published research — looks into plagiarism, fake data, and other misconduct, then decides what action to take.",subject:"English Language & Literature",linkedin:true,website:"ioppublishing.org"},
+  {name:"Rin Hamburgh",company:"Rin Hamburgh & Co",desc:"Runs a copywriting agency — writes blogs, website copy, and brand messaging to help businesses stand out and connect with people.",subject:"English Language & Literature",linkedin:true,website:"rin-hamburgh.co.uk"},
+  {name:"Jem Brownlee",company:"Sawday's",desc:"A copywriter who turns life experience into words that sell — writes content on everything from hospitality to sport to craft beer.",subject:"English Language & Literature",linkedin:true,website:"sawdays.co.uk"},
+  {name:"Lucy Atkinson",company:"AG Communications",desc:"Helps companies improve how they communicate with their own employees during big changes — leads global projects making sure people feel informed and treated fairly.",subject:"English Language & Literature",linkedin:true,website:"agcommunications.co.uk"},
+  {name:"Laura McDowell",company:"AG Communications",desc:"Drives sustainable change by blending creative communication with real-world impact — guides businesses through becoming B Corps and advises on purpose strategy.",subject:"English Language & Literature",linkedin:true,website:"agcommunications.co.uk"},
+  {name:"Nicola Breen",company:"AG Communications",desc:"Makes sure everything behind the scenes runs smoothly, fairly, and sustainably — looks after the team, systems, and finances so the business can grow.",subject:"English Language & Literature",linkedin:true,website:"agcommunications.co.uk"},
+  {name:"Laura Greaves",company:"IOP Publishing",desc:"Works in publishing — handles admin, customer service, proofreading, and project management, picking up new skills every day.",subject:"English Language & Literature",linkedin:true,website:"ioppublishing.org"},
+  {name:"Ned Harvey",company:"AgencyUK",desc:"A Creative Copywriter at AgencyUK — day-to-day can change from minute to minute.",subject:"English Language & Literature",linkedin:true,website:"agencyuk.com"},
+  {name:"Georgia Webber",company:"IOP Publishing",desc:"Associate Editor at a science publisher — works on the editorial side of getting research published.",subject:"English Language & Literature",website:"ioppublishing.org"},
+  {name:"Chloe Slim",company:"IOP Publishing",desc:"The person who makes sure everyone in the company knows what's going on — writes newsletters, runs events, manages the company intranet, and turns updates into things people actually want to read.",subject:"English Language & Literature",linkedin:true,website:"ioppublishing.org"},
+  {name:"Sammi Frost",company:"IOP Publishing",desc:"Works in scientific publishing, identifying which research articles can be published for free under special deals with universities.",subject:"English Language & Literature",linkedin:true,website:"ioppublishing.org"},
+  {name:"Juliet Baker",company:"IOP Publishing",desc:"Manages projects that improve how scientific research gets published — coordinates tech, marketing, and editorial teams to deliver new tools on time and on budget.",subject:"English Language & Literature",linkedin:true,website:"ioppublishing.org"},
+  {name:"Antigoni Messaritaki",company:"IOP Publishing",desc:"Manages a team and a collection of scientific journals — works with famous scientists and travels to conferences worldwide to publish cutting-edge discoveries.",subject:"English Language & Literature",website:"ioppublishing.org"},
+  {name:"Patrick Henry",company:"Sawday's",desc:"Account manager at a travel publishing company — manages relationships with places to stay.",subject:"English Language & Literature",linkedin:true,website:"sawdays.co.uk"},
+
+  // COMPUTER SCIENCE & IT
+  {name:"Rich King",company:"Ecologi",desc:"Builds new tech features for a climate/sustainability website and keeps everything running behind the scenes.",subject:"Computer Science & IT",linkedin:true,website:"ecologi.com"},
+  {name:"Jennie Neil",company:"IOP Publishing",desc:"Runs the business technology systems at a science publisher — makes sure the software and tools the company relies on work properly.",subject:"Computer Science & IT",website:"ioppublishing.org"},
+  {name:"Sara King",company:"Rocketmakers",desc:"A project manager who acts as the bridge between clients with big ideas and the designers and developers who build them — turns wild concepts into real apps and platforms.",subject:"Computer Science & IT",linkedin:true,website:"rocketmakers.com"},
+  {name:"Poppy Wilde",company:"IOP Publishing",desc:"A data analyst/engineer at a science publisher — works with data to help the business make better decisions.",subject:"Computer Science & IT",linkedin:true,website:"ioppublishing.org"},
+  {name:"Jon",company:"Aer Studios",desc:"Leads a team of developers who build websites and digital experiences — makes sure everyone knows what to build and helps them figure out how.",subject:"Computer Science & IT",linkedin:true,website:"aerstudios.co.uk"},
+  {name:"Gareth Machin",company:"IOP Publishing",desc:"Teaches 400+ colleagues worldwide how to use Microsoft 365 apps — creates guides, videos, and training sessions to help people feel confident with tech.",subject:"Computer Science & IT",linkedin:true,website:"ioppublishing.org"},
+  {name:"James Hobbs",company:"Aer Studios",desc:"Manages a team of people who make websites, games, and apps.",subject:"Computer Science & IT",linkedin:true,website:"aerstudios.co.uk"},
+  {name:"Lyndsey Henderson",company:"equisoft",desc:"Manages projects to set up new clients on financial software — runs workshops, coordinates teams, and is the go-to person when issues come up.",subject:"Computer Science & IT",linkedin:true,website:"equisoft.com"},
+  {name:"Amy Thomas",company:"IOP Publishing",desc:"Looks after the software used to publish scientific articles online — lots of problem-solving and troubleshooting when things go wrong.",subject:"Computer Science & IT",linkedin:true,website:"ioppublishing.org"},
+  {name:"Dougal Houston",company:"IOP Publishing",desc:"Uses AI and data science to build systems that recommend articles to readers — figures out what people might want to read based on their interests.",subject:"Computer Science & IT",linkedin:true,website:"ioppublishing.org"},
+  {name:"Ben Smith",company:"Avon Wildlife Trust",desc:"Looks after the IT needs for an environmental charity — provides tech support, training, and manages the infrastructure.",subject:"Computer Science & IT",linkedin:true,website:"avonwildlifetrust.org.uk"},
+  {name:"Sam Howey Nunn",company:"Free Ice Cream",desc:"Leads a small design/tech company that builds community mapping tools — one helps young people have a say in city planning, another helps communities map their relationships.",subject:"Computer Science & IT",linkedin:true,website:"freeicecream.co.uk"},
+  {name:"Kyle Welch",company:"Tumelo",desc:"A senior software engineer at a fintech company that helps investors have a real say in where their money goes — writes code, designs systems, and leads security.",subject:"Computer Science & IT",linkedin:true,website:"tumelo.com"},
+  {name:"Sam Maesschalck",company:"Immersive Labs",desc:"Builds replica critical infrastructure environments so people can learn how to protect them from cyber attacks.",subject:"Computer Science & IT",linkedin:true,website:"immersivelabs.com"},
+  {name:"Sylvain Viguier",company:"Graphcore",desc:"Leads a team of 15 engineers building AI tools that help companies create and run artificial intelligence applications.",subject:"Computer Science & IT",linkedin:true,website:"graphcore.ai"},
+  {name:"Robert Butler",company:"Rocketmakers",desc:"Builds the behind-the-scenes code that makes apps and websites work — designs APIs and sets up the systems that keep everything running.",subject:"Computer Science & IT",linkedin:true,website:"rocketmakers.com"},
+  {name:"Matt Benton",company:"Ecologi",desc:"Builds and leads software teams — currently making tools that help businesses do the right thing for the planet.",subject:"Computer Science & IT",linkedin:true,website:"ecologi.com"},
+  {name:"Dan Dando",company:"Rocketmakers",desc:"A software developer who builds websites and apps, working with clients to bring their business ideas to life.",subject:"Computer Science & IT",linkedin:true,website:"rocketmakers.com"},
+  {name:"Norman Grundy",company:"Rocketmakers",desc:"Builds apps and websites — turns ideas into working digital products.",subject:"Computer Science & IT",linkedin:true,website:"rocketmakers.com"},
+  {name:"Marcus Bowyer",company:"Rocketmakers",desc:"A frontend software engineer — builds the parts of websites and apps that you actually see and interact with.",subject:"Computer Science & IT",linkedin:true,website:"rocketmakers.com"},
+  {name:"Caroline Cozier",company:"CareScribe",desc:"Manages teams building software that helps people with disabilities — like captions for people with hearing loss and tools for neurodiverse people to recap information.",subject:"Computer Science & IT",linkedin:true,website:"carescribe.io"},
+  {name:"Anna Parker",company:"Stantec (Hydrock)",desc:"Part of the Innovation Delivery team — supports the development of digital products and services at an engineering consultancy.",subject:"Computer Science & IT",linkedin:true,website:"stantec.com/en"},
+  {name:"Charli Eaton",company:"Moonraker VFX",desc:"Keeps all the tech running at a visual effects studio — fixes IT issues, manages data, and keeps the network fast and secure so artists can focus on creating.",subject:"Computer Science & IT",linkedin:true,website:"moonrakervfx.com"},
+  {name:"Laura",company:"Aer Studios",desc:"A project manager at a digital agency — the link between the client and the creative team, planning projects and keeping everything running smoothly.",subject:"Computer Science & IT",website:"aerstudios.co.uk"},
+
+  // ENGINEERING & DT
+  {name:"Joshua Bell",company:"Dynisma",desc:"Engineering lead who develops tools and solves problems using MATLAB, Simulink, and Python — graduated from Oxford with a first in physics.",subject:"Engineering & DT",linkedin:true,website:"dynisma.com"},
+  {name:"Andy Porter",company:"South Glos Council",desc:"Manages street lighting and a community handyman service for the council — keeps public infrastructure maintained.",subject:"Engineering & DT",linkedin:true,website:"southglos.gov.uk"},
+  {name:"Stefanie",company:"Money Hub",desc:"Solves puzzles and builds things from scratch — works on creative STEM projects where the challenge is different every day.",subject:"Engineering & DT",linkedin:true,website:"moneyhub.com"},
+  {name:"Lucia Roca",company:"Perceptual Robotics",desc:"Sells drone systems around the world — does everything from writing LinkedIn posts and editing videos to speaking at events about drones and AI.",subject:"Engineering & DT",linkedin:true,website:"perceptual-robotics.com"},
+  {name:"Ben Scheller",company:"Perceptual Robotics",desc:"An engineer and project manager developing autonomous drone technology for inspecting wind turbines.",subject:"Engineering & DT",linkedin:true,website:"perceptual-robotics.com"},
+  {name:"Kirk McLean",company:"Ameresco",desc:"Manages the commissioning and maintenance of renewable energy systems — learns how different technologies work and manages projects across large-scale sites.",subject:"Engineering & DT",linkedin:true,website:"ameresco.com"},
+  {name:"Max Duke",company:"Dynisma",desc:"Designs driving simulators for motorsport and F1 companies — works on robotics, simulations, and testing.",subject:"Engineering & DT",linkedin:true,website:"dynisma.com"},
+  {name:"Anjali Manoj",company:"Matter",desc:"A mechanical design engineer who creates products that help people — has worked on prosthetic hands and medical devices using 3D modelling and design software.",subject:"Engineering & DT",linkedin:true,website:"matter.industries"},
+  {name:"Simon Santamaria",company:"Stantec (Hydrock)",desc:"An engineer solving big problems in fire safety — makes sure buildings and communities are safer for everyone.",subject:"Engineering & DT",linkedin:true,website:"stantec.com/en"},
+  {name:"Vanessa Vooght",company:"Local Partnerships",desc:"A professional engineer specialising in process engineering and industrial energy management.",subject:"Engineering & DT",linkedin:true,website:"localpartnerships.gov.uk"},
+  {name:"Ruby Lowe",company:"Stantec (Hydrock)",desc:"Senior nuclear management consultant at a major engineering firm.",subject:"Engineering & DT",linkedin:true,website:"stantec.com/en"},
+  {name:"Robin Evans",company:"Stantec (Hydrock)",desc:"A structural engineer — designs buildings and structures to be safe and strong.",subject:"Engineering & DT",linkedin:true,website:"stantec.com/en"},
+  {name:"Sanjeet Shokeen",company:"Matter",desc:"A mechanical design engineer creating eco-friendly products like filters that stop microplastics getting into the environment.",subject:"Engineering & DT",linkedin:true,website:"matter.industries"},
+  {name:"Phil Hall",company:"Stantec (Hydrock)",desc:"Leads and delivers big engineering and construction projects like new venues and urban regeneration.",subject:"Engineering & DT",linkedin:true,website:"stantec.com/en"},
+  {name:"Hugo Ramsey",company:"Matter",desc:"A senior design engineer creating useful products that help people and the planet.",subject:"Engineering & DT",linkedin:true,website:"matter.industries"},
+  {name:"Joseph Willey",company:"Dynisma",desc:"Lead mechanical engineer at a company developing world-leading driving simulators.",subject:"Engineering & DT",linkedin:true,website:"dynisma.com"},
+  {name:"Tom Stafford",company:"Dynisma",desc:"Engineering Director leading teams to create cutting-edge driving simulator technology.",subject:"Engineering & DT",linkedin:true,website:"dynisma.com"},
+  {name:"Tom Batchelor",company:"Dynisma",desc:"A systems engineer designing advanced technology for the defence industry.",subject:"Engineering & DT",linkedin:true,website:"dynisma.com"},
+  {name:"Laurence Vaughn",company:"Dynisma",desc:"A chartered engineer who's led teams for 10+ years across nuclear, aerospace, defence, rail, and automotive.",subject:"Engineering & DT",linkedin:true,website:"dynisma.com"},
+  {name:"Matthew Bell",company:"Dynisma",desc:"Head of Mechanical Design at a simulator company — leads the creation of high-tech motion platforms.",subject:"Engineering & DT",linkedin:true,website:"dynisma.com"},
+  {name:"Nikhil Garrett",company:"Dynisma",desc:"Designs and builds high-tech racing simulators used by top motorsport teams including Formula 1.",subject:"Engineering & DT",linkedin:true,website:"dynisma.com"},
+  {name:"Lewis Young",company:"Dynisma",desc:"A build engineer who trained in the Royal Navy — learned aeronautical engineering skills that he now uses daily.",subject:"Engineering & DT",linkedin:true,website:"dynisma.com"},
+  {name:"James Golding",company:"Dynisma",desc:"Head of Simulation and Control at a driving simulator company — leads the team making virtual driving feel real.",subject:"Engineering & DT",linkedin:true,website:"dynisma.com"},
+  {name:"Adrián Zarzuelo",company:"Dynisma",desc:"A simulator development engineer working on F1 racing simulators.",subject:"Engineering & DT",linkedin:true,website:"dynisma.com"},
+  {name:"Jasper Kearney",company:"Dynisma",desc:"A mechanical design engineer building cutting-edge driving simulator technology.",subject:"Engineering & DT",linkedin:true,website:"dynisma.com"},
+  {name:"Bevan Page",company:"Matter",desc:"A design engineer — combines creative design skills with engineering to develop physical products.",subject:"Engineering & DT",linkedin:true,website:"matter.industries"},
+  {name:"Michael O'Doherty",company:"Local Partnerships",desc:"Helps decide how homes and neighbourhoods get built, improved, and made greener.",subject:"Engineering & DT",linkedin:true},
+  {name:"Sharlene Momberg",company:"Ameresco",desc:"Manages the commercial side of construction projects — negotiates contracts, manages budgets, and makes sure everyone's legally protected.",subject:"Engineering & DT",linkedin:true,website:"ameresco.com"},
+
+  // BIOLOGY
+  {name:"Steve Dickenson",company:"Ecologi",desc:"Fights climate change by helping people fund carbon reduction and biodiversity projects.",subject:"Biology",linkedin:true,website:"ecologi.com"},
+  {name:"Lucy Hellier",company:"Avon Wildlife Trust",desc:"Learning manager for children and young people at a wildlife trust.",subject:"Biology",linkedin:true,website:"avonwildlifetrust.org.uk"},
+  {name:"Amie Cook",company:"Avon Wildlife Trust",desc:"An ecologist passionate about connecting people with nature — delivers training and workshops.",subject:"Biology",linkedin:true,website:"avonwildlifetrust.org.uk"},
+  {name:"Emma Fennel Hodson",company:"Avon Wildlife Trust",desc:"Supports people bringing nature-based community projects to life through workshops, mentoring, and peer support networks.",subject:"Biology",linkedin:true,website:"avonwildlifetrust.org.uk"},
+  {name:"Abbie Wiberg",company:"Avon Wildlife Trust",desc:"Manages volunteering at Avon Wildlife Trust — improves the experience for volunteers and coordinates monthly harbour clean-ups.",subject:"Biology",linkedin:true,website:"avonwildlifetrust.org.uk"},
+
+  // GEOGRAPHY & ENVIRONMENTAL SCIENCE
+  {name:"Steve Keating",company:"Local Partnerships",desc:"Advises organisations on switching to greener energy like solar and wind.",subject:"Geography & Environmental Science",linkedin:true},
+  {name:"Chloe Hipwood-Norton",company:"Local Partnerships",desc:"A consultant working for the public sector in waste management, the circular economy, and sustainability.",subject:"Geography & Environmental Science",linkedin:true,website:"localpartnerships.gov.uk"},
+  {name:"Emma Higgs",company:"Bristol City Leap",desc:"Works on Bristol's plan to invest nearly £500m in green energy like solar and heat pumps.",subject:"Geography & Environmental Science",linkedin:true,website:"bristolcityleap.co.uk"},
+  {name:"Tish Russel",company:"Avon Wildlife Trust",desc:"Supports young people across Avon to connect with nature, find conservation career paths, and try new outdoor skills.",subject:"Geography & Environmental Science",website:"avonwildlifetrust.org.uk"},
+  {name:"Lauren Carter",company:"IOP Publishing",desc:"Manages environmental research journals — helps scientists publish their sustainability research.",subject:"Geography & Environmental Science",linkedin:true,website:"ioppublishing.org"},
+  {name:"Lucy Brown",company:"Pointer Consultancy",desc:"Helps startups and small businesses understand their carbon footprint and climate risk.",subject:"Geography & Environmental Science",linkedin:true,website:"pointerconsultancygroup.co.uk"},
+  {name:"Alice Montgomery",company:"Pointer Consultancy",desc:"Works at a consultancy doing a mix of marketing and sustainability work.",subject:"Geography & Environmental Science",linkedin:true,website:"pointerconsultancygroup.co.uk"},
+  {name:"Peter Fletcher",company:"Yeo Valley",desc:"Buys everything a major food company needs that isn't food — energy, recycling, cleaning — while making sure those choices are ethical and sustainable.",subject:"Geography & Environmental Science",linkedin:true,website:"yeovalley.co.uk"},
+  {name:"Paul Chandler",company:"Bristol Energy",desc:"Manages two solar farms and fifteen rooftop solar installations — keeps community-owned renewable energy running.",subject:"Geography & Environmental Science",linkedin:true,website:"bristolenergy.coop"},
+  {name:"Debbie Thackray",company:"AG Communications",desc:"Helps companies think about their ethical and environmental impact.",subject:"Geography & Environmental Science",linkedin:true,website:"agcommunications.co.uk"},
+  {name:"Oliver Clay",company:"Bristol Energy",desc:"Manages the installation of community-owned renewable energy projects.",subject:"Geography & Environmental Science",website:"bristolenergy.coop"},
+  {name:"Jonquil Panting",company:"Bristol Energy",desc:"Helps a community energy organisation make a practical difference on climate change.",subject:"Geography & Environmental Science",linkedin:true,website:"bristolenergy.coop"},
+  {name:"Sigita Botyriute",company:"Frank Water",desc:"An HR professional who creates workplaces where people feel welcome and valued.",subject:"Geography & Environmental Science",linkedin:true,website:"greatwesterncu.org"},
+  {name:"Kaya Brown",company:"Ecologi",desc:"Marketing manager at a climate tech company — works across content, social media, and email.",subject:"Geography & Environmental Science",linkedin:true,website:"ecologi.com"},
+  {name:"Eleanor Turner",company:"Ecologi",desc:"Works in sustainability focused on carbon accounting and offsetting.",subject:"Geography & Environmental Science",linkedin:true,website:"ecologi.com"},
+  {name:"Friederike Smith",company:"Ecologi",desc:"Part of the commercial team at a climate action company — brings in new business customers.",subject:"Geography & Environmental Science",linkedin:true,website:"ecologi.com"},
+  {name:"Lucy Gemmell",company:"Ecologi",desc:"Finds the world's best climate projects, checks they're genuinely impactful, arranges funding, and creates marketing content.",subject:"Geography & Environmental Science",linkedin:true,website:"ecologi.com"},
+  {name:"Tim Fernando",company:"Ecologi",desc:"Runs the team building technology to help businesses tackle climate change.",subject:"Geography & Environmental Science",linkedin:true,website:"ecologi.com"},
+  {name:"Connor Davies",company:"Avon Wildlife Trust",desc:"Works with young people to help them make decisions about restoring nature on a wasteland site.",subject:"Geography & Environmental Science",linkedin:true,website:"avonwildlifetrust.org.uk"},
+  {name:"Sara Grimes",company:"Bath & West Community Energy",desc:"Finds ways to start new clean energy projects — writes business cases, applies for grants.",subject:"Geography & Environmental Science",linkedin:true,website:"bwce.coop"},
+  {name:"Tom Fourcade",company:"Local Partnerships",desc:"30 years' experience in waste management, renewable energy, and climate change.",subject:"Geography & Environmental Science",linkedin:true,website:"localpartnerships.gov.uk"},
+  {name:"Tom Marshall",company:"Local Partnerships",desc:"Helps government and councils create strategies to reduce waste and boost recycling.",subject:"Geography & Environmental Science",linkedin:true,website:"localpartnerships.gov.uk"},
+  {name:"Jane Forshaw",company:"Local Partnerships",desc:"Over 25 years leading climate and energy projects.",subject:"Geography & Environmental Science",website:"localpartnerships.gov.uk"},
+  {name:"Shah Faisal",company:"Local Partnerships",desc:"Helps councils plan and deliver environmental projects — everything from waste management to net-zero strategies.",subject:"Geography & Environmental Science",linkedin:true,website:"localpartnerships.gov.uk"},
+  {name:"Lee Hannan",company:"Local Partnerships",desc:"Helps public sector organisations work better together on big projects — specialises in making buildings more eco-friendly.",subject:"Geography & Environmental Science",linkedin:true,website:"localpartnerships.gov.uk"},
+  {name:"Melissa Penn",company:"AG Communications",desc:"Business manager and environmental lead — manages finances while also driving the company's green agenda.",subject:"Geography & Environmental Science",linkedin:true,website:"agcommunications.co.uk"},
+  {name:"Nicole Stock",company:"Matter",desc:"Works on sustainability and innovation in the textile industry.",subject:"Geography & Environmental Science",linkedin:true,website:"matter.industries"},
+  {name:"Heloise Balme",company:"Bristol Food Network",desc:"Runs Bristol Food Network — manages projects making the city's food system healthier, more sustainable, and more resilient.",subject:"Geography & Environmental Science",linkedin:true,website:"bristolfoodnetwork.org"},
+  {name:"Tessa Holmes",company:"Sawday's",desc:"A sustainability lead and project manager who organises projects bringing creative and sustainable ideas to life.",subject:"Geography & Environmental Science",linkedin:true,website:"sawdays.co.uk"},
+
+  // ART & DESIGN
+  {name:"Claire Dibben",company:"CareScribe",desc:"Director of Marketing at a software company — grew the team from just herself to six people in three years.",subject:"Art & Design",linkedin:true,website:"carescribe.io"},
+  {name:"Adam Boita",company:"Ecologi",desc:"Marketing Director helping businesses get to net zero to save the planet.",subject:"Art & Design",linkedin:true,website:"ecologi.com"},
+  {name:"Ben Holness",company:"Yoyo Design",desc:"A designer at a digital agency — creates visual designs for websites, brands, and digital projects.",subject:"Art & Design",linkedin:true},
+  {name:"Daniel Barron",company:"Yoyo Design",desc:"Takes a brand's project or idea and figures out what it really needs to work — the discovery phase before anything gets built.",subject:"Art & Design",linkedin:true,website:"yoyodesign.com"},
+  {name:"Kieran McMillan",company:"Aer Studios",desc:"Designs how apps and websites look and feel — makes sure they're easy and enjoyable to use.",subject:"Art & Design",linkedin:true,website:"aerstudios.co.uk"},
+  {name:"Liam Edwards",company:"AgencyUK",desc:"Art Director who leads the visual side of campaigns — turns strategy into striking creative.",subject:"Art & Design",linkedin:true,website:"agencyuk.com"},
+  {name:"Dan Srokosz",company:"AgencyUK",desc:"Creative Director overseeing a studio of animators, designers, photographers, and copywriters.",subject:"Art & Design",linkedin:true,website:"agencyuk.com"},
+  {name:"Anna Dixon",company:"Yoyo Design",desc:"Client Strategy Director at a digital agency — builds long-term client relationships and creates strategies for charities and non-profits.",subject:"Art & Design",linkedin:true,website:"yoyodesign.com"},
+  {name:"Harriet Kinsley",company:"Yoyo Design",desc:"Senior Marketing & Partnerships Manager — creates events, builds business connections.",subject:"Art & Design",linkedin:true,website:"yoyodesign.com"},
+  {name:"Matthew Harris",company:"Rocketmakers",desc:"Builds happy, effective tech teams — looks after security, infrastructure, and client support.",subject:"Art & Design",linkedin:true,website:"rocketmakers.com"},
+  {name:"Rich Williams",company:"Something Familiar",desc:"Co-founder of a creative agency — leads creative teams, works with big brands, and mentors young talent.",subject:"Art & Design",linkedin:true,website:"somethingfamiliar.co.uk"},
+  {name:"Adam Grover",company:"Barefoot Architects",desc:"An architect's assistant designing eco-friendly homes and community spaces.",subject:"Art & Design",linkedin:true,website:"barefootarchitects.co.uk"},
+  {name:"Sam Goss",company:"Barefoot Architects",desc:"Founded an architecture studio focused on sustainability — designs eco-friendly homes and community spaces.",subject:"Art & Design",linkedin:true,website:"barefootarchitects.co.uk"},
+  {name:"Julian Woods",company:"Barefoot Architects",desc:"An architectural assistant with a background in sustainable design.",subject:"Art & Design",linkedin:true,website:"barefootarchitects.co.uk"},
+  {name:"Kate Hutchinson",company:"Barefoot Architects",desc:"Lectures in Architecture at Bath Spa University — teaches students how to design sustainable buildings.",subject:"Art & Design",linkedin:true,website:"barefootarchitects.co.uk"},
+  {name:"Robert Hankey",company:"Barefoot Architects",desc:"An architect at a studio designing eco-friendly homes and community spaces.",subject:"Art & Design",website:"barefootarchitects.co.uk"},
+
+  // MEDIA STUDIES
+  {name:"Danie Stinchcombe",company:"Gather Round",desc:"Marketing Director for coworking spaces in Bristol and Bath.",subject:"Media Studies",linkedin:true,website:"gather-round.co/about"},
+  {name:"Sophie Bancroft",company:"Avon Wildlife Trust",desc:"Communications officer raising awareness about the ecological emergency.",subject:"Media Studies",linkedin:true,website:"avonwildlifetrust.org.uk"},
+  {name:"Jenn Blackwood",company:"Freelance",desc:"A producer and researcher for creative companies — finds and develops ideas for creative projects.",subject:"Media Studies",linkedin:true},
+  {name:"Lauren Salmon",company:"Speed Communications",desc:"A senior PR consultant who develops creative campaigns and leads the people and wellbeing side of the agency.",subject:"Media Studies",linkedin:true,website:"speedcommunications.com"},
+  {name:"Amy Stanley-Stiff",company:"Speed Communications",desc:"Social media consultant — creates content for Instagram, finds TikTok creators, and manages social campaigns.",subject:"Media Studies",linkedin:true,website:"speedcommunications.com"},
+  {name:"Julia Filsell",company:"Speed Communications",desc:"Head of Digital at a PR agency — leads a team delivering social media content, ad campaigns, and influencer partnerships.",subject:"Media Studies",linkedin:true,website:"speedcommunications.com"},
+  {name:"Bethan Williams",company:"Speed Communications",desc:"Works in PR, helping brands become famous through news coverage, social media, and influencer partnerships.",subject:"Media Studies",linkedin:true,website:"speedcommunications.com"},
+  {name:"Helen Collingborn",company:"Speed Communications",desc:"Head of PR specialising in food and hospitality — over 15 years delivering award-winning results.",subject:"Media Studies",linkedin:true,website:"speedcommunications.com"},
+  {name:"Luisa Sanders",company:"Aardman",desc:"Senior Social Media Manager at Aardman — creates content strategies for film and TV releases.",subject:"Media Studies",linkedin:true,website:"aardman.com"},
+  {name:"Deneka Francis",company:"Yoyo Design",desc:"Marketing executive — promotes the agency through social media, events, research, and outreach.",subject:"Media Studies",linkedin:true,website:"yoyodesign.com"},
+  {name:"Kat Child",company:"Invivo Healthcare",desc:"A community leader who brings people together for sustainability and the arts.",subject:"Media Studies",linkedin:true,website:"invivohealthcare.com"},
+  {name:"Alison Hargreaves",company:"Moonraker VFX",desc:"A creative producer and director who makes films, documentaries, and theatre.",subject:"Media Studies",linkedin:true,website:"moonrakervfx.com"},
+  {name:"Ryan Harrington",company:"Moonraker VFX",desc:"Creates 3D visuals and effects for films and TV using tools like Maya and Houdini.",subject:"Media Studies",linkedin:true,website:"moonrakervfx.com"},
+  {name:"Jon Grafton",company:"Moonraker VFX",desc:"Founded and runs Moonraker VFX, a visual effects studio.",subject:"Media Studies",linkedin:true,website:"moonrakervfx.com"},
+  {name:"Olly Hagar",company:"Moonraker VFX",desc:"Leads the 2D visual effects team at a VFX studio.",subject:"Media Studies",linkedin:true,website:"moonrakervfx.com"},
+  {name:"John Clayton",company:"Moonraker VFX",desc:"Combines different images, effects, and layers to create the final visual effects in films and TV.",subject:"Media Studies",linkedin:true,website:"moonrakervfx.com"},
+  {name:"Alex Briggs",company:"Moonraker VFX",desc:"Head of Production at a VFX studio — makes sure creative projects are delivered on time and on budget.",subject:"Media Studies",linkedin:true,website:"moonrakervfx.com"},
+  {name:"Annie Scott",company:"Moonraker VFX",desc:"Office manager and PA at a VFX studio — keeps everything running smoothly.",subject:"Media Studies",linkedin:true,website:"moonrakervfx.com"},
+  {name:"Emily Cusick",company:"AG Communications",desc:"Specialises in internal communications — helps companies use digital tools to keep employees connected.",subject:"Media Studies",linkedin:true,website:"agcommunications.co.uk"},
+  {name:"Lynne Griffiths",company:"AG Communications",desc:"Runs a communications consultancy that helps business leaders communicate with clarity.",subject:"Media Studies",linkedin:true,website:"agcommunications.co.uk"},
+  {name:"Lucy Mitchell-Skone",company:"Good Energy",desc:"A marketing executive experienced in digital marketing, events, and content creation.",subject:"Media Studies",linkedin:true,website:"goodenergy.co.uk"},
+  {name:"Emily Enright",company:"Sawday's",desc:"Head of Marketing & PR at a travel company — specialises in PR, partnerships, and influencer campaigns.",subject:"Media Studies",linkedin:true,website:"sawdays.co.uk"},
+  {name:"Isobel Higley",company:"Sawday's",desc:"Head of Marketing — leads creative campaigns and builds brand awareness.",subject:"Media Studies",linkedin:true,website:"sawdays.co.uk"},
+
+  // PSYCHOLOGY
+  {name:"Cath Wilkins",company:"Bath Mind",desc:"Manages the counselling service at Bath Mind — is a qualified counsellor and oversees the team.",subject:"Psychology",linkedin:true,website:"bathmind.org.uk"},
+  {name:"Norah O'Shea",company:"Clinical Practice",desc:"Clinical Psychologist.",subject:"Psychology"},
+  {name:"Wendy Cooper",company:"Clinical Practice",desc:"A psychologist who helps adults make changes to support their mental health through therapy.",subject:"Psychology",linkedin:true},
+
+  // SOCIOLOGY
+  {name:"Ben Hetherington",company:"Science Creates",desc:"Former teacher, delivering hands-on science workshops and helps run a charity.",subject:"Sociology",linkedin:true,website:"sciencecreates.co.uk"},
+  {name:"Sally Slater",company:"Ghyston",desc:"Runs the people side of a tech company — helps staff grow their careers and shapes workplace culture.",subject:"Sociology",linkedin:true,website:"ghyston.com"},
+  {name:"Steve Williamson",company:"Avon Wildlife Trust",desc:"Works in HR at a wildlife trust — builds relationships with employees and keeps up with employment law.",subject:"Sociology",linkedin:true,website:"avonwildlifetrust.org.uk"},
+  {name:"Emily Ball",company:"Yoyo Design",desc:"Two roles in one: people management and business operations.",subject:"Sociology",linkedin:true,website:"yoyodesign.com"},
+  {name:"Helen Perry",company:"IOP Publishing",desc:"Works across HR, recruitment, training, diversity, and wellbeing.",subject:"Sociology",linkedin:true,website:"ioppublishing.org"},
+  {name:"Lorraine Jennings",company:"IOP Publishing",desc:"Handles all recruitment for a global company — headhunts candidates and makes sure hiring is fair.",subject:"Sociology",linkedin:true,website:"ioppublishing.org"},
+  {name:"Kevin Lacey",company:"South Glos Council",desc:"A project manager working on things like introducing AI tools and redesigning how teams work.",subject:"Sociology",website:"southglos.gov.uk"},
+  {name:"Johanna Ohler",company:"TravelLocal",desc:"Manages special projects focused on company culture, employee wellbeing, and sustainability.",subject:"Sociology",linkedin:true,website:"travellocal.com/en-gb"},
+  {name:"Claire Williams",company:"Frank Water",desc:"Manages the finances and resources at a water charity.",subject:"Sociology",website:"frankwater.com"},
+  {name:"Amy Nelson",company:"Bath City Farm",desc:"Manages a project that helps people facing barriers to employment — teaches work skills and helps with CVs.",subject:"Sociology",linkedin:true,website:"bathcityfarm.org.uk"},
+  {name:"Richard Godfrey",company:"Rocketmakers",desc:"CEO of a software company — meets people who want to build apps and makes sure the company is a great place to work.",subject:"Sociology",linkedin:true,website:"rocketmakers.com"},
+  {name:"Kat Thackray",company:"People Equals Purpose",desc:"Runs a business that helps organisations fix workplace culture problems.",subject:"Sociology",linkedin:true,website:"peopleequalspurpose.com"},
+  {name:"Sarah King",company:"Loaf Spark",desc:"An HR and leadership consultant who owns a small business.",subject:"Sociology",linkedin:true,website:"loafspark.com"},
+  {name:"Laura Milano",company:"Invivo Healthcare",desc:"A nutritional therapist — helps people improve their health through food and nutrition.",subject:"Sociology",linkedin:true,website:"invivohealthcare.com"},
+  {name:"Abigail Croft",company:"Matter",desc:"An HR professional who helps with everything people-related at work.",subject:"Sociology",linkedin:true,website:"matter.industries"},
+  {name:"Chelsea Dow",company:"LettUs Grow",desc:"Helps build a positive work culture and creates partnerships — passionate about food justice.",subject:"Sociology",linkedin:true,website:"lettusgrow.com"},
+  {name:"Sally Shervington",company:"Sawday's",desc:"An experienced leader in travel and hospitality — mentors young people in leadership skills.",subject:"Sociology",linkedin:true,website:"sawdays.co.uk"},
+  {name:"Deborah Gibbs",company:"South Glos Council",desc:"Oversees school standards and runs adult learning and employability programmes.",subject:"Sociology",website:"southglos.gov.uk"},
+  {name:"Sarah King",company:"OVO Energy",desc:"An HR and leadership consultant.",subject:"Sociology",linkedin:true,website:"ovoenergy.co.uk"},
+  {name:"Adam Charles",company:"Matter",desc:"Leads HR projects tackling microplastic pollution.",subject:"Sociology",linkedin:true,website:"matter.industries"},
+  {name:"Nicola Carroll",company:"Speed Communications",desc:"Leads HR at a PR agency and works on campaigns.",subject:"Sociology",linkedin:true},
+  {name:"Emma Lam",company:"Local Partnerships",desc:"Leads workforce planning — uses data to predict what skills and people will be needed.",subject:"Sociology",linkedin:true,website:"localpartnerships.gov.uk"},
+
+  // LAW
+  {name:"Charlie Delaney",company:"Google",desc:"A lawyer at Google who advises on privacy issues and works with major advertisers.",subject:"Law",linkedin:true,website:"about.google"},
+  {name:"Sonya Bedford",company:"Vattenfall",desc:"A solicitor who specialised in renewable energy — now consults for Vattenfall.",subject:"Law",linkedin:true,website:"bristolcityleap.co.uk"},
+  {name:"Huw Russell",company:"Local Partnerships",desc:"A commercial lawyer and director — handles legal work for public sector projects.",subject:"Law",linkedin:true,website:"localpartnerships.gov.uk"},
+];
+
+// ── State ──
+let studentAssignments = {}; // { hostKey: [email1, email2, ...] }
+
+// Load saved data from localStorage
+function loadState() {
+  try {
+    const saved = localStorage.getItem('ni-host-assignments');
+    if (saved) studentAssignments = JSON.parse(saved);
+  } catch(e) {}
+}
+
+function saveState() {
+  try {
+    localStorage.setItem('ni-host-assignments', JSON.stringify(studentAssignments));
+  } catch(e) {}
+}
+
+function hostKey(host) {
+  return `${host.name}__${host.company}`;
+}
+
+// ── Get subjects ──
+const subjects = [...new Set(hosts.map(h => h.subject))];
+
+// ── Populate filter ──
+const subjectFilter = document.getElementById('subjectFilter');
+subjects.forEach(s => {
+  const opt = document.createElement('option');
+  opt.value = s;
+  opt.textContent = s;
+  subjectFilter.appendChild(opt);
+});
+
+// ── Render ──
+function render() {
+  const filter = subjectFilter.value;
+  const search = document.getElementById('searchInput').value.toLowerCase().trim();
+  const container = document.getElementById('hostList');
+  container.innerHTML = '';
+
+  let totalVisible = 0;
+  let totalAssigned = 0;
+
+  const grouped = {};
+  hosts.forEach(h => {
+    if (filter !== 'all' && h.subject !== filter) return;
+    if (search) {
+      const haystack = `${h.name} ${h.company} ${h.desc}`.toLowerCase();
+      if (!haystack.includes(search)) return;
+    }
+    if (!grouped[h.subject]) grouped[h.subject] = [];
+    grouped[h.subject].push(h);
+  });
+
+  const subjectOrder = subjects.filter(s => grouped[s]);
+
+  if (subjectOrder.length === 0) {
+    container.innerHTML = '<div class="empty-state"><p>No hosts match your search.</p></div>';
+    document.getElementById('matchCount').textContent = '0 matches';
+    return;
+  }
+
+  subjectOrder.forEach(subject => {
+    const section = document.createElement('div');
+    section.className = 'subject-section';
+
+    const heading = document.createElement('div');
+    heading.className = 'subject-heading';
+    heading.innerHTML = `<span>${subject}</span><span class="subject-count">${grouped[subject].length} host${grouped[subject].length !== 1 ? 's' : ''}</span>`;
+    section.appendChild(heading);
+
+    grouped[subject].forEach(host => {
+      const key = hostKey(host);
+      const emails = studentAssignments[key] || [];
+      totalVisible++;
+      totalAssigned += emails.length;
+
+      const card = document.createElement('div');
+      card.className = 'host-card' + (emails.length > 0 ? ' has-students' : '');
+
+      const linksHtml = [
+        host.linkedin ? '<a href="#">LinkedIn ↗</a>' : '',
+        host.website ? `<a href="https://${host.website}" target="_blank">${host.website} ↗</a>` : ''
+      ].filter(Boolean).join('');
+
+      const tagsHtml = emails.map((email, i) =>
+        `<span class="student-tag">${email}<span class="remove" data-key="${key}" data-idx="${i}">×</span></span>`
+      ).join('');
+
+      card.innerHTML = `
+        <div class="host-top">
+          <div>
+            <span class="host-name">${host.name}</span>
+            <span class="host-company"> — ${host.company}</span>
+          </div>
+          ${emails.length > 0 ? `<span class="badge">${emails.length} student${emails.length !== 1 ? 's' : ''}</span>` : ''}
+        </div>
+        <div class="host-desc">${host.desc}</div>
+        ${linksHtml ? `<div class="host-links">${linksHtml}</div>` : ''}
+        <div class="student-area">
+          <div class="student-label">Nominate a student</div>
+          <div class="student-input-row">
+            <input type="email" class="student-email-input" placeholder="student@school.ac.uk" data-key="${key}">
+            <button class="btn-add" data-key="${key}">Nominate</button>
+          </div>
+          ${tagsHtml ? `<div class="student-tags">${tagsHtml}</div>` : ''}
+        </div>
+      `;
+      section.appendChild(card);
+    });
+
+    container.appendChild(section);
+  });
+
+  document.getElementById('matchCount').textContent = `${totalVisible} host${totalVisible !== 1 ? 's' : ''}`;
+
+  // Export bar summary
+  const exportBar = document.getElementById('exportBar');
+  if (totalAssigned > 0) {
+    document.getElementById('exportSummary').innerHTML = `<strong>${totalAssigned}</strong> student${totalAssigned !== 1 ? 's' : ''} nominated`;
+  } else {
+    document.getElementById('exportSummary').textContent = 'Nominate students above, then submit';
+  }
+}
+
+// ── Event Delegation ──
+document.getElementById('hostList').addEventListener('click', (e) => {
+  // Add button
+  if (e.target.classList.contains('btn-add')) {
+    const key = e.target.dataset.key;
+    const input = document.querySelector(`.student-email-input[data-key="${CSS.escape(key)}"]`);
+    const email = input.value.trim();
+    if (!email) return;
+    if (!email.includes('@')) { showToast('Please enter a valid email'); return; }
+    if (!studentAssignments[key]) studentAssignments[key] = [];
+    if (studentAssignments[key].includes(email)) { showToast('Already added'); return; }
+    studentAssignments[key].push(email);
+    saveState();
+    render();
+    showToast('Student nominated ✓');
+  }
+
+  // Remove tag
+  if (e.target.classList.contains('remove')) {
+    const key = e.target.dataset.key;
+    const idx = parseInt(e.target.dataset.idx);
+    studentAssignments[key].splice(idx, 1);
+    if (studentAssignments[key].length === 0) delete studentAssignments[key];
+    saveState();
+    render();
+  }
+});
+
+// Enter key to add
+document.getElementById('hostList').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.classList.contains('student-email-input')) {
+    const key = e.target.dataset.key;
+    document.querySelector(`.btn-add[data-key="${CSS.escape(key)}"]`).click();
+  }
+});
+
+// Filters
+subjectFilter.addEventListener('change', render);
+document.getElementById('searchInput').addEventListener('input', render);
+
+// Clear all
+document.getElementById('clearAllBtn').addEventListener('click', () => {
+  if (Object.keys(studentAssignments).length === 0) return;
+  if (!confirm('Clear all student assignments? This cannot be undone.')) return;
+  studentAssignments = {};
+  saveState();
+  render();
+  showToast('All assignments cleared');
+});
+
+// Export to Airtable via Zapier
+const ZAPIER_WEBHOOK = 'https://hooks.zapier.com/hooks/catch/15285814/uc41hx8/';
+
+async function submitToAirtable() {
+  const teacherName = document.getElementById('teacherName').value.trim();
+  const teacherSchool = document.getElementById('teacherSchool').value.trim();
+  if (!teacherName) { showToast('Please enter your name first'); document.getElementById('teacherName').focus(); return; }
+  if (!teacherSchool) { showToast('Please enter your school / university'); document.getElementById('teacherSchool').focus(); return; }
+
+  const matches = [];
+  hosts.forEach(host => {
+    const key = hostKey(host);
+    const emails = studentAssignments[key] || [];
+    emails.forEach(email => {
+      matches.push({
+        host_name: host.name,
+        company: host.company,
+        subject: host.subject,
+        student_email: email,
+        submitted_by: teacherName,
+        school: teacherSchool
+      });
+    });
+  });
+
+  if (matches.length === 0) { showToast('No students to submit'); return; }
+
+  // Disable button and show progress
+  const btns = document.querySelectorAll('#submitBtn');
+  btns.forEach(b => { b.disabled = true; b.textContent = 'Sending…'; });
+
+  let sent = 0;
+  let failed = 0;
+
+  for (const match of matches) {
+    try {
+      await fetch(ZAPIER_WEBHOOK, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(match)
+      });
+      sent++;
+    } catch (e) {
+      failed++;
+    }
+  }
+
+  btns.forEach(b => { b.disabled = false; b.textContent = 'Submit to Not Impossible ↑'; });
+
+  if (failed === 0) {
+    showToast(`${sent} match${sent !== 1 ? 'es' : ''} submitted ✓`);
+    // Show Step 4 confirmation
+    document.getElementById('exportBar').innerHTML = `
+      <div style="text-align:center; padding:0.25rem 0;">
+        <span class="step-label-dark" style="display:block; margin-bottom:0.3rem;">Step 4 — You're done, we'll take it from here</span>
+        <span class="export-summary">We'll email each student with their host details and next steps. You'll be cc'd on everything so you stay in the loop.</span>
+      </div>
+    `;
+    // Clear after successful submit
+    studentAssignments = {};
+    saveState();
+    render();
+  } else {
+    showToast(`${sent} sent, ${failed} failed — try again`);
+  }
+}
+
+document.getElementById('submitBtn').addEventListener('click', submitToAirtable);
+
+// Toast
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+// ── Init ──
+loadState();
+render();
+</script>
+</body>
+</html>
