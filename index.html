@@ -130,6 +130,13 @@
   .subject-option:hover {
     background: var(--ni-light);
   }
+  .subject-select[multiple] {
+    appearance: auto;
+    background-image: none;
+    min-height: 90px;
+  }
+
+  .subject-select option { color: var(--ni-navy); background: white; }
 
   .search-input {
     flex: 1;
@@ -744,6 +751,7 @@
             <button type="button" class="subject-filter-toggle" id="subjectFilterToggle" aria-haspopup="true" aria-expanded="false">All Subjects</button>
             <div class="subject-filter-menu" id="subjectFilterMenu" role="listbox" aria-label="Filter by one or more subjects"></div>
           </div>
+          <select class="subject-select" id="subjectFilter" multiple aria-label="Filter by one or more subjects"></select>
           <input type="text" class="search-input" id="searchInput" placeholder="Search hosts, companies…">
 
           <button class="btn btn-outline" id="clearAllBtn" title="Clear all student emails">Clear All</button>
