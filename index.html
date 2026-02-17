@@ -400,11 +400,38 @@
   }
 
   .step-toggle {
-    cursor: default;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.35rem 0;
+    user-select: none;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+
+  .step-toggle:hover {
+    background: rgba(255,255,255,0.05);
   }
 
   .step-chevron {
-    display: none;
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    text-align: center;
+    line-height: 20px;
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+  }
+
+  .step-chevron::after {
+    content: '▾';
+    font-size: 0.7rem;
+    opacity: 0.6;
+  }
+
+  .step-toggle.is-collapsed .step-chevron {
+    transform: rotate(-90deg);
   }
 
   .step-content {
@@ -418,6 +445,26 @@
     max-height: 0;
     opacity: 0;
     margin: 0;
+  }
+
+  /* Inline summary shown when step is collapsed on desktop */
+  .step-summary {
+    display: none;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.5);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-left: 0.75rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .step-toggle.is-collapsed .step-summary {
+    display: inline-block;
   }
 
   /* Responsive */
@@ -441,39 +488,10 @@
       padding: 0.75rem 0.75rem 5.5rem;
     }
 
-    /* Collapsible step toggles */
+    /* Collapsible step toggles - mobile overrides */
     .step-toggle {
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
       padding: 0.5rem 0;
       -webkit-tap-highlight-color: transparent;
-      user-select: none;
-    }
-
-    .step-chevron {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      text-align: center;
-      line-height: 20px;
-      transition: transform 0.3s ease;
-      flex-shrink: 0;
-    }
-
-    .step-chevron::after {
-      content: '▾';
-      font-size: 0.75rem;
-    }
-
-    .collapsed + .step-section .step-toggle .step-chevron,
-    .step-content.collapsed ~ .step-chevron {
-      transform: rotate(-90deg);
-    }
-
-    .step-toggle.is-collapsed .step-chevron {
-      transform: rotate(-90deg);
     }
 
     /* Controls stack vertically */
@@ -629,7 +647,7 @@
     <h1>Not Impossible — <span>Host Matching</span></h1>
     <p class="header-intro">Nominate students who are unlikely to have the family connections so often needed to find work experience on their own. Every host below has volunteered to host a one-hour, one-on-one microplacement — and 94% of students who've done one say they feel more optimistic about their future.</p>
     <div class="step-section">
-      <div class="step-label step-toggle" id="step1Toggle">Step 1 — About you<span class="step-chevron"></span></div>
+      <div class="step-label step-toggle" id="step1Toggle">Step 1 — About you<span class="step-summary" id="step1Summary"></span><span class="step-chevron"></span></div>
       <div class="step-content" id="step1Content">
         <div class="controls" style="margin-bottom:0.6rem;">
           <input type="text" class="search-input" id="teacherName" placeholder="Your name" style="max-width:220px;">
@@ -639,7 +657,7 @@
       </div>
     </div>
     <div class="step-section">
-      <div class="step-label step-toggle" id="step2Toggle">Step 2 — Browse hosts and nominate students<span class="step-chevron"></span></div>
+      <div class="step-label step-toggle" id="step2Toggle">Step 2 — Browse hosts and nominate students<span class="step-summary" id="step2Summary"></span><span class="step-chevron"></span></div>
       <div class="step-content" id="step2Content">
         <div class="controls">
           <select class="subject-select" id="subjectFilter">
@@ -1198,41 +1216,51 @@ function showToast(msg) {
   setTimeout(() => toast.classList.remove('show'), 2000);
 }
 
-// ── Collapsible step sections (mobile) ──
+// ── Collapsible step sections ──
+function updateStepSummaries() {
+  const name = document.getElementById('teacherName').value.trim();
+  const email = document.getElementById('teacherEmail').value.trim();
+  const school = document.getElementById('teacherSchool').value.trim();
+  const step1Summary = document.getElementById('step1Summary');
+  const parts = [name, email, school].filter(Boolean);
+  step1Summary.textContent = parts.length ? parts.join(' · ') : '';
+
+  const step2Summary = document.getElementById('step2Summary');
+  const subject = document.getElementById('subjectFilter');
+  const search = document.getElementById('searchInput').value.trim();
+  const filterParts = [];
+  if (subject.value !== 'all') filterParts.push(subject.options[subject.selectedIndex].text);
+  if (search) filterParts.push('"' + search + '"');
+  step2Summary.textContent = filterParts.length ? filterParts.join(' · ') : '';
+}
+
 function setupCollapsible() {
-  const isMobile = window.innerWidth <= 640;
   const step1Toggle = document.getElementById('step1Toggle');
   const step1Content = document.getElementById('step1Content');
-  const step2Toggle = document.getElementById('step2Toggle');
-  const step2Content = document.getElementById('step2Content');
 
-  if (isMobile) {
-    // Collapse step 1 by default on mobile (user fills once)
-    step1Content.classList.add('collapsed');
-    step1Toggle.classList.add('is-collapsed');
-  } else {
-    step1Content.classList.remove('collapsed');
-    step1Toggle.classList.remove('is-collapsed');
-    step2Content.classList.remove('collapsed');
-    step2Toggle.classList.remove('is-collapsed');
-  }
+  // Collapse Step 1 by default (it's a fill-once section)
+  step1Content.classList.add('collapsed');
+  step1Toggle.classList.add('is-collapsed');
+
+  // Step 2 stays open by default
+  updateStepSummaries();
 }
 
 document.querySelectorAll('.step-toggle').forEach(toggle => {
   toggle.addEventListener('click', () => {
-    if (window.innerWidth > 640) return;
     const content = toggle.nextElementSibling;
     content.classList.toggle('collapsed');
     toggle.classList.toggle('is-collapsed');
+    updateStepSummaries();
   });
 });
 
-window.addEventListener('resize', () => {
-  if (window.innerWidth > 640) {
-    document.querySelectorAll('.step-content').forEach(c => c.classList.remove('collapsed'));
-    document.querySelectorAll('.step-toggle').forEach(t => t.classList.remove('is-collapsed'));
-  }
-});
+// Update summaries when inputs change
+document.getElementById('teacherName').addEventListener('input', updateStepSummaries);
+document.getElementById('teacherEmail').addEventListener('input', updateStepSummaries);
+document.getElementById('teacherSchool').addEventListener('input', updateStepSummaries);
+document.getElementById('searchInput').addEventListener('input', updateStepSummaries);
+document.getElementById('subjectFilter').addEventListener('change', updateStepSummaries);
 
 // ── Init ──
 loadState();
