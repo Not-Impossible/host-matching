@@ -1261,7 +1261,7 @@ function render() {
         <div class="student-area">
           <div class="student-label">Nominate a student for this host</div>
           <div class="student-input-row">
-            <input type="email" class="student-email-input" list="studentHints" placeholder="Student email address" data-key="${key}">
+            <input type="email" class="student-email-input" placeholder="Student email address" data-key="${key}">
             <button class="btn-add" data-key="${key}">Add</button>
           </div>
           ${quickAddHtml}
@@ -1278,18 +1278,6 @@ function render() {
   // Export bar summary
   updateExportBarState(totalAssigned);
 
-  const existingHints = document.getElementById('studentHints');
-  if (existingHints) existingHints.remove();
-  if (savedStudents.length > 0) {
-    const datalist = document.createElement('datalist');
-    datalist.id = 'studentHints';
-    savedStudents.slice(0, 30).forEach(email => {
-      const opt = document.createElement('option');
-      opt.value = email;
-      datalist.appendChild(opt);
-    });
-    document.body.appendChild(datalist);
-  }
 }
 
 // ── Event Delegation ──
