@@ -944,11 +944,47 @@ const hosts = [
 // ── State ──
 let studentAssignments = {}; // { hostKey: [email1, email2, ...] }
 
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function parseEmailCandidates(rawValue) {
+  return [...new Set(
+    String(rawValue || '')
+      .split(/[\s,;]+/)
+      .map(value => value.trim().toLowerCase())
+      .filter(Boolean)
+  )];
+}
+
 // Load saved data from localStorage
 function loadState() {
   try {
     const saved = localStorage.getItem('ni-host-assignments');
-    if (saved) studentAssignments = JSON.parse(saved);
+    if (!saved) return;
+    const parsed = JSON.parse(saved);
+    if (!parsed || typeof parsed !== 'object') return;
+
+    studentAssignments = Object.fromEntries(
+      Object.entries(parsed)
+        .filter(([, emails]) => Array.isArray(emails))
+        .map(([key, emails]) => [
+          key,
+          [...new Set(emails
+            .map(email => String(email).trim().toLowerCase())
+            .filter(isValidEmail))]
+        ])
+        .filter(([, emails]) => emails.length > 0)
+    );
   } catch(e) {}
 }
 
@@ -1032,11 +1068,11 @@ function render() {
       const linkedinUrl = getLinkedinUrlForHost(host);
       const linksHtml = [
         linkedinUrl ? `<a href="${linkedinUrl}" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a>` : '',
-        host.website ? `<a href="https://${host.website}" target="_blank">${host.website} ↗</a>` : ''
+        host.website ? `<a href="https://${host.website}" target="_blank" rel="noopener noreferrer">${host.website} ↗</a>` : ''
       ].filter(Boolean).join('');
 
       const tagsHtml = emails.map((email, i) =>
-        `<span class="student-tag">${email}<span class="remove" data-key="${key}" data-idx="${i}">×</span></span>`
+        `<span class="student-tag">${escapeHtml(email)}<span class="remove" data-key="${key}" data-idx="${i}">×</span></span>`
       ).join('');
 
       card.innerHTML = `
@@ -1052,7 +1088,7 @@ function render() {
         <div class="student-area">
           <div class="student-label">Nominate a student</div>
           <div class="student-input-row">
-            <input type="email" class="student-email-input" placeholder="Enter student email, then press Enter ↵" data-key="${key}">
+            <input type="email" class="student-email-input" placeholder="Enter one or more student emails (comma or space separated)" data-key="${key}">
             <button class="btn-add" data-key="${key}">+ Nominate</button>
           </div>
           ${tagsHtml ? `<div class="student-tags">${tagsHtml}</div>` : ''}
@@ -1080,15 +1116,29 @@ document.getElementById('hostList').addEventListener('click', (e) => {
   if (e.target.classList.contains('btn-add')) {
     const key = e.target.dataset.key;
     const input = document.querySelector(`.student-email-input[data-key="${CSS.escape(key)}"]`);
-    const email = input.value.trim();
-    if (!email) return;
-    if (!email.includes('@')) { showToast('Please enter a valid email'); return; }
+    const candidates = parseEmailCandidates(input.value);
+    if (candidates.length === 0) return;
+
+    const invalid = candidates.filter(email => !isValidEmail(email));
+    if (invalid.length > 0) {
+      showToast('Please check student email format');
+      return;
+    }
+
     if (!studentAssignments[key]) studentAssignments[key] = [];
-    if (studentAssignments[key].includes(email)) { showToast('Already added'); return; }
-    studentAssignments[key].push(email);
+
+    const existing = new Set(studentAssignments[key]);
+    const added = candidates.filter(email => !existing.has(email));
+
+    if (added.length === 0) {
+      showToast('Already added');
+      return;
+    }
+
+    studentAssignments[key].push(...added);
     saveState();
     render();
-    showToast('Nomination added ✓');
+    showToast(`${added.length} nomination${added.length !== 1 ? 's' : ''} added ✓`);
   }
 
   // Remove tag
@@ -1146,6 +1196,7 @@ async function submitToAirtable() {
   const teacherSchool = document.getElementById('teacherSchool').value.trim();
   if (!teacherName) { showToast('Please enter your name first'); document.getElementById('teacherName').focus(); return; }
   if (!teacherEmail) { showToast('Please enter your email'); document.getElementById('teacherEmail').focus(); return; }
+  if (!isValidEmail(teacherEmail)) { showToast('Please enter a valid teacher email'); document.getElementById('teacherEmail').focus(); return; }
   if (!teacherSchool) { showToast('Please enter your school / university'); document.getElementById('teacherSchool').focus(); return; }
 
   const matches = [];
@@ -1172,9 +1223,10 @@ async function submitToAirtable() {
   btns.forEach(b => { b.disabled = true; b.textContent = 'Sending…'; });
 
   let sent = 0;
-  let failed = 0;
 
-  for (const match of matches) {
+  for (let i = 0; i < matches.length; i++) {
+    const match = matches[i];
+    btns.forEach(b => { b.textContent = `Sending ${i + 1}/${matches.length}…`; });
     try {
       await fetch(ZAPIER_WEBHOOK, {
         method: 'POST',
@@ -1184,13 +1236,13 @@ async function submitToAirtable() {
       });
       sent++;
     } catch (e) {
-      failed++;
+      // With no-cors we can only detect network-level failures.
     }
   }
 
   btns.forEach(b => { b.disabled = false; b.textContent = 'Submit to Not Impossible ↑'; });
 
-  if (failed === 0) {
+  if (sent > 0) {
     showToast(`${sent} match${sent !== 1 ? 'es' : ''} submitted ✓`);
     // Show Step 4 confirmation
     document.getElementById('exportBar').innerHTML = `
@@ -1204,7 +1256,7 @@ async function submitToAirtable() {
     saveState();
     render();
   } else {
-    showToast(`${sent} sent, ${failed} failed — try again`);
+    showToast('Submission failed — please check your connection and try again');
   }
 }
 
@@ -1240,9 +1292,7 @@ function setupCollapsible() {
   const step1Toggle = document.getElementById('step1Toggle');
   const step1Content = document.getElementById('step1Content');
 
-  // Collapse Step 1 by default (it's a fill-once section)
-  step1Content.classList.add('collapsed');
-  step1Toggle.classList.add('is-collapsed');
+  // Keep Step 1 open by default so required fields are always visible.
 
   // Step 2 stays open by default
   updateStepSummaries();
