@@ -81,6 +81,21 @@
   .subject-filter {
     flex: 1;
     min-width: 220px;
+  }
+
+  .subject-filter-list {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .subject-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.6rem;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 999px;
     position: relative;
   }
 
@@ -91,53 +106,21 @@
     border-radius: var(--radius);
     background: rgba(255,255,255,0.08);
     color: white;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
+    font-size: 0.78rem;
     cursor: pointer;
-    text-align: left;
+    user-select: none;
   }
 
-  .subject-filter-menu {
-    display: none;
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: calc(100% + 0.4rem);
-    background: var(--ni-white);
-    border: 1px solid var(--ni-border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-md);
-    padding: 0.35rem;
-    max-height: 260px;
-    overflow: auto;
-    z-index: 120;
+  .subject-chip input {
+    margin: 0;
+    width: 14px;
+    height: 14px;
+    accent-color: var(--ni-coral);
   }
 
-  .subject-filter.open .subject-filter-menu {
-    display: block;
+  .subject-chip:hover {
+    background: rgba(255,255,255,0.14);
   }
-
-  .subject-option {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    font-size: 0.83rem;
-    color: var(--ni-navy);
-    padding: 0.4rem 0.45rem;
-    border-radius: 6px;
-  }
-
-  .subject-option:hover {
-    background: var(--ni-light);
-  }
-  .subject-select[multiple] {
-    appearance: auto;
-    background-image: none;
-    min-height: 90px;
-  }
-
-  .subject-select option { color: var(--ni-navy); background: white; }
-
   .search-input {
     flex: 1;
     min-width: 180px;
@@ -522,7 +505,7 @@
 
   .step-content {
     max-height: 500px;
-    overflow: hidden;
+    overflow: visible;
     transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
     opacity: 1;
   }
@@ -531,6 +514,7 @@
     max-height: 0;
     opacity: 0;
     margin: 0;
+    overflow: hidden;
   }
 
   /* Inline summary shown when step is collapsed on desktop */
@@ -748,10 +732,8 @@
       <div class="step-content" id="step2Content">
         <div class="controls">
           <div class="subject-filter" id="subjectFilterWrap">
-            <button type="button" class="subject-filter-toggle" id="subjectFilterToggle" aria-haspopup="true" aria-expanded="false">All Subjects</button>
-            <div class="subject-filter-menu" id="subjectFilterMenu" role="listbox" aria-label="Filter by one or more subjects"></div>
+            <div class="subject-filter-list" id="subjectFilterMenu" aria-label="Filter by one or more subjects"></div>
           </div>
-          <select class="subject-select" id="subjectFilter" multiple aria-label="Filter by one or more subjects"></select>
           <input type="text" class="search-input" id="searchInput" placeholder="Search hosts, companies…">
 
           <button class="btn btn-outline" id="clearAllBtn" title="Clear all student emails">Clear All</button>
@@ -1132,24 +1114,17 @@ function updateExportBarState(totalAssigned) {
 const subjects = [...new Set(hosts.map(h => h.subject))];
 
 // ── Populate filter ──
-const subjectFilterWrap = document.getElementById('subjectFilterWrap');
-const subjectFilterToggle = document.getElementById('subjectFilterToggle');
 const subjectFilterMenu = document.getElementById('subjectFilterMenu');
 
 subjects.forEach(subject => {
   const row = document.createElement('label');
-  row.className = 'subject-option';
+  row.className = 'subject-chip';
   row.innerHTML = `<input type="checkbox" value="${escapeHtml(subject)}"> <span>${subject}</span>`;
   subjectFilterMenu.appendChild(row);
 });
 
 function getSelectedSubjects() {
   return Array.from(subjectFilterMenu.querySelectorAll('input[type="checkbox"]:checked')).map(input => input.value);
-}
-
-function updateSubjectFilterLabel() {
-  const selected = getSelectedSubjects();
-  subjectFilterToggle.textContent = selected.length === 0 ? 'All Subjects' : `${selected.length} subject${selected.length !== 1 ? 's' : ''} selected`;
 }
 
 // ── Render ──
@@ -1343,7 +1318,6 @@ document.getElementById('hostList').addEventListener('input', (e) => {
 
 // Filters
 subjectFilterMenu.addEventListener('change', () => {
-  updateSubjectFilterLabel();
   render();
   updateStepSummaries();
 });
@@ -1485,6 +1459,7 @@ document.getElementById('teacherName').addEventListener('input', updateStepSumma
 document.getElementById('teacherEmail').addEventListener('input', updateStepSummaries);
 document.getElementById('teacherSchool').addEventListener('input', updateStepSummaries);
 document.getElementById('searchInput').addEventListener('input', updateStepSummaries);
+
 
 
 
