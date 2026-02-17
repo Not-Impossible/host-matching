@@ -944,11 +944,38 @@ const hosts = [
 // ── State ──
 let studentAssignments = {}; // { hostKey: [email1, email2, ...] }
 
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 // Load saved data from localStorage
 function loadState() {
   try {
     const saved = localStorage.getItem('ni-host-assignments');
-    if (saved) studentAssignments = JSON.parse(saved);
+    if (!saved) return;
+    const parsed = JSON.parse(saved);
+    if (!parsed || typeof parsed !== 'object') return;
+
+    studentAssignments = Object.fromEntries(
+      Object.entries(parsed)
+        .filter(([, emails]) => Array.isArray(emails))
+        .map(([key, emails]) => [
+          key,
+          [...new Set(emails
+            .map(email => String(email).trim().toLowerCase())
+            .filter(isValidEmail))]
+        ])
+        .filter(([, emails]) => emails.length > 0)
+    );
   } catch(e) {}
 }
 
@@ -1032,11 +1059,11 @@ function render() {
       const linkedinUrl = getLinkedinUrlForHost(host);
       const linksHtml = [
         linkedinUrl ? `<a href="${linkedinUrl}" target="_blank" rel="noopener noreferrer">LinkedIn ↗</a>` : '',
-        host.website ? `<a href="https://${host.website}" target="_blank">${host.website} ↗</a>` : ''
+        host.website ? `<a href="https://${host.website}" target="_blank" rel="noopener noreferrer">${host.website} ↗</a>` : ''
       ].filter(Boolean).join('');
 
       const tagsHtml = emails.map((email, i) =>
-        `<span class="student-tag">${email}<span class="remove" data-key="${key}" data-idx="${i}">×</span></span>`
+        `<span class="student-tag">${escapeHtml(email)}<span class="remove" data-key="${key}" data-idx="${i}">×</span></span>`
       ).join('');
 
       card.innerHTML = `
@@ -1080,9 +1107,9 @@ document.getElementById('hostList').addEventListener('click', (e) => {
   if (e.target.classList.contains('btn-add')) {
     const key = e.target.dataset.key;
     const input = document.querySelector(`.student-email-input[data-key="${CSS.escape(key)}"]`);
-    const email = input.value.trim();
+    const email = input.value.trim().toLowerCase();
     if (!email) return;
-    if (!email.includes('@')) { showToast('Please enter a valid email'); return; }
+    if (!isValidEmail(email)) { showToast('Please enter a valid email'); return; }
     if (!studentAssignments[key]) studentAssignments[key] = [];
     if (studentAssignments[key].includes(email)) { showToast('Already added'); return; }
     studentAssignments[key].push(email);
@@ -1172,7 +1199,6 @@ async function submitToAirtable() {
   btns.forEach(b => { b.disabled = true; b.textContent = 'Sending…'; });
 
   let sent = 0;
-  let failed = 0;
 
   for (const match of matches) {
     try {
@@ -1184,13 +1210,13 @@ async function submitToAirtable() {
       });
       sent++;
     } catch (e) {
-      failed++;
+      // With no-cors we can only detect network-level failures.
     }
   }
 
   btns.forEach(b => { b.disabled = false; b.textContent = 'Submit to Not Impossible ↑'; });
 
-  if (failed === 0) {
+  if (sent > 0) {
     showToast(`${sent} match${sent !== 1 ? 'es' : ''} submitted ✓`);
     // Show Step 4 confirmation
     document.getElementById('exportBar').innerHTML = `
@@ -1204,7 +1230,7 @@ async function submitToAirtable() {
     saveState();
     render();
   } else {
-    showToast(`${sent} sent, ${failed} failed — try again`);
+    showToast('Submission failed — please check your connection and try again');
   }
 }
 
