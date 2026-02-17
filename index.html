@@ -78,9 +78,14 @@
     flex-wrap: wrap;
   }
 
-  .subject-select {
+  .subject-filter {
     flex: 1;
     min-width: 220px;
+    position: relative;
+  }
+
+  .subject-filter-toggle {
+    width: 100%;
     padding: 0.6rem 1rem;
     border: 2px solid rgba(255,255,255,0.15);
     border-radius: var(--radius);
@@ -89,12 +94,42 @@
     font-family: 'DM Sans', sans-serif;
     font-size: 0.9rem;
     cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23fff' stroke-width='2' fill='none'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 1rem center;
+    text-align: left;
   }
 
+  .subject-filter-menu {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 0.4rem);
+    background: var(--ni-white);
+    border: 1px solid var(--ni-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    padding: 0.35rem;
+    max-height: 260px;
+    overflow: auto;
+    z-index: 120;
+  }
+
+  .subject-filter.open .subject-filter-menu {
+    display: block;
+  }
+
+  .subject-option {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    font-size: 0.83rem;
+    color: var(--ni-navy);
+    padding: 0.4rem 0.45rem;
+    border-radius: 6px;
+  }
+
+  .subject-option:hover {
+    background: var(--ni-light);
+  }
   .subject-select[multiple] {
     appearance: auto;
     background-image: none;
@@ -550,7 +585,7 @@
       flex-direction: column;
     }
 
-    .subject-select, .search-input {
+    .subject-filter, .search-input {
       min-width: 100%;
       min-height: 44px;
       font-size: 16px;
@@ -712,6 +747,10 @@
       <div class="step-label step-toggle" id="step2Toggle">Step 2 — Browse hosts and nominate students<span class="step-summary" id="step2Summary"></span><span class="step-chevron"></span></div>
       <div class="step-content" id="step2Content">
         <div class="controls">
+          <div class="subject-filter" id="subjectFilterWrap">
+            <button type="button" class="subject-filter-toggle" id="subjectFilterToggle" aria-haspopup="true" aria-expanded="false">All Subjects</button>
+            <div class="subject-filter-menu" id="subjectFilterMenu" role="listbox" aria-label="Filter by one or more subjects"></div>
+          </div>
           <select class="subject-select" id="subjectFilter" multiple aria-label="Filter by one or more subjects"></select>
           <input type="text" class="search-input" id="searchInput" placeholder="Search hosts, companies…">
 
@@ -1093,16 +1132,24 @@ function updateExportBarState(totalAssigned) {
 const subjects = [...new Set(hosts.map(h => h.subject))];
 
 // ── Populate filter ──
-const subjectFilter = document.getElementById('subjectFilter');
-subjects.forEach(s => {
-  const opt = document.createElement('option');
-  opt.value = s;
-  opt.textContent = s;
-  subjectFilter.appendChild(opt);
+const subjectFilterWrap = document.getElementById('subjectFilterWrap');
+const subjectFilterToggle = document.getElementById('subjectFilterToggle');
+const subjectFilterMenu = document.getElementById('subjectFilterMenu');
+
+subjects.forEach(subject => {
+  const row = document.createElement('label');
+  row.className = 'subject-option';
+  row.innerHTML = `<input type="checkbox" value="${escapeHtml(subject)}"> <span>${subject}</span>`;
+  subjectFilterMenu.appendChild(row);
 });
 
 function getSelectedSubjects() {
-  return Array.from(subjectFilter.selectedOptions).map(option => option.value);
+  return Array.from(subjectFilterMenu.querySelectorAll('input[type="checkbox"]:checked')).map(input => input.value);
+}
+
+function updateSubjectFilterLabel() {
+  const selected = getSelectedSubjects();
+  subjectFilterToggle.textContent = selected.length === 0 ? 'All Subjects' : `${selected.length} subject${selected.length !== 1 ? 's' : ''} selected`;
 }
 
 // ── Render ──
@@ -1295,7 +1342,11 @@ document.getElementById('hostList').addEventListener('input', (e) => {
 });
 
 // Filters
-subjectFilter.addEventListener('change', render);
+subjectFilterMenu.addEventListener('change', () => {
+  updateSubjectFilterLabel();
+  render();
+  updateStepSummaries();
+});
 document.getElementById('searchInput').addEventListener('input', render);
 
 // Clear all
@@ -1402,10 +1453,9 @@ function updateStepSummaries() {
   step1Summary.textContent = parts.length ? parts.join(' · ') : '';
 
   const step2Summary = document.getElementById('step2Summary');
-  const subject = document.getElementById('subjectFilter');
   const search = document.getElementById('searchInput').value.trim();
   const filterParts = [];
-  const selectedSubjects = Array.from(subject.selectedOptions).map(option => option.textContent);
+  const selectedSubjects = getSelectedSubjects();
   if (selectedSubjects.length > 0) filterParts.push(selectedSubjects.join(', '));
   if (search) filterParts.push('"' + search + '"');
   step2Summary.textContent = filterParts.length ? filterParts.join(' · ') : '';
@@ -1435,8 +1485,20 @@ document.getElementById('teacherName').addEventListener('input', updateStepSumma
 document.getElementById('teacherEmail').addEventListener('input', updateStepSummaries);
 document.getElementById('teacherSchool').addEventListener('input', updateStepSummaries);
 document.getElementById('searchInput').addEventListener('input', updateStepSummaries);
-document.getElementById('subjectFilter').addEventListener('change', updateStepSummaries);
 
+
+
+subjectFilterToggle.addEventListener('click', () => {
+  const isOpen = subjectFilterWrap.classList.toggle('open');
+  subjectFilterToggle.setAttribute('aria-expanded', String(isOpen));
+});
+
+document.addEventListener('click', (e) => {
+  if (!subjectFilterWrap.contains(e.target)) {
+    subjectFilterWrap.classList.remove('open');
+    subjectFilterToggle.setAttribute('aria-expanded', 'false');
+  }
+});
 
 let hasAutoCollapsedForBrowse = false;
 
@@ -1460,6 +1522,7 @@ function setBrowsingMode() {
 // ── Init ──
 loadState();
 setupCollapsible();
+updateSubjectFilterLabel();
 render();
 setBrowsingMode();
 window.addEventListener('scroll', setBrowsingMode, { passive: true });
