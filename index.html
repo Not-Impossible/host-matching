@@ -1369,12 +1369,22 @@ document.getElementById('hostList').addEventListener('input', (e) => {
   }
 });
 
-// Filters
+// Auto-collapse both steps when user focuses a student email input in the host cards
+document.getElementById('hostList').addEventListener('focusin', (e) => {
+  if (e.target.classList.contains('student-email-input')) {
+    collapseStep('step1');
+    collapseStep('step2');
+  }
+});
+
+// Filters — also auto-collapse Step 1 when user interacts with Step 2
 subjectFilterMenu.addEventListener('change', () => {
   render();
   updateStepSummaries();
+  collapseStep('step1');
 });
 document.getElementById('searchInput').addEventListener('input', render);
+document.getElementById('searchInput').addEventListener('focus', () => collapseStep('step1'));
 
 // Clear all
 document.getElementById('clearAllBtn').addEventListener('click', () => {
@@ -1504,6 +1514,10 @@ document.querySelectorAll('.step-toggle').forEach(toggle => {
     content.classList.toggle('collapsed');
     toggle.classList.toggle('is-collapsed');
     updateStepSummaries();
+    // If the user opened a section, suppress auto-collapse briefly
+    if (!content.classList.contains('collapsed')) {
+      autoCollapseSuppressUntil = Date.now() + 4000;
+    }
   });
 });
 
@@ -1516,7 +1530,19 @@ document.getElementById('searchInput').addEventListener('input', updateStepSumma
 
 
 
-let hasAutoCollapsedForBrowse = false;
+// Auto-collapse: suppress briefly after manual toggle so the section
+// doesn't slam shut the instant the user opens it.
+let autoCollapseSuppressUntil = 0;
+
+function collapseStep(stepId) {
+  const content = document.getElementById(`${stepId}Content`);
+  const toggle = document.getElementById(`${stepId}Toggle`);
+  if (content && toggle && !content.classList.contains('collapsed')) {
+    content.classList.add('collapsed');
+    toggle.classList.add('is-collapsed');
+    updateStepSummaries();
+  }
+}
 
 function setBrowsingMode() {
   const isCurrentlyBrowsing = document.body.classList.contains('browsing-mode');
@@ -1524,21 +1550,9 @@ function setBrowsingMode() {
   const shouldCompact = window.innerWidth > 640 && window.scrollY > threshold;
   document.body.classList.toggle('browsing-mode', shouldCompact);
 
-  if (shouldCompact && !hasAutoCollapsedForBrowse) {
-    ['step1', 'step2'].forEach(step => {
-      const content = document.getElementById(`${step}Content`);
-      const toggle = document.getElementById(`${step}Toggle`);
-      if (content && toggle && !content.classList.contains('collapsed')) {
-        content.classList.add('collapsed');
-        toggle.classList.add('is-collapsed');
-      }
-    });
-    hasAutoCollapsedForBrowse = true;
-  }
-
-  // Reset when user scrolls back up so steps re-collapse on next scroll down
-  if (!shouldCompact) {
-    hasAutoCollapsedForBrowse = false;
+  if (shouldCompact && Date.now() > autoCollapseSuppressUntil) {
+    collapseStep('step1');
+    collapseStep('step2');
   }
 }
 
