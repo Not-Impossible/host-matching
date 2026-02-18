@@ -758,11 +758,135 @@
     }
   }
 
+  /* Receipt modal */
+  .receipt-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(26,39,68,0.6);
+    z-index: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+  }
+  .receipt-overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .receipt {
+    background: var(--ni-white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    max-width: 560px;
+    width: 100%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(12px);
+    transition: transform 0.25s ease;
+  }
+  .receipt-overlay.show .receipt {
+    transform: translateY(0);
+  }
+  .receipt-header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--ni-border);
+  }
+  .receipt-header h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--ni-navy);
+    margin-bottom: 0.15rem;
+  }
+  .receipt-header p {
+    font-size: 0.8rem;
+    color: var(--ni-grey);
+  }
+  .receipt-body {
+    padding: 1rem 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .receipt-group {
+    margin-bottom: 1rem;
+  }
+  .receipt-group-heading {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ni-coral);
+    margin-bottom: 0.4rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 2px solid var(--ni-coral-light);
+  }
+  .receipt-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0.3rem 0;
+    font-size: 0.82rem;
+    gap: 1rem;
+  }
+  .receipt-host {
+    font-weight: 600;
+    color: var(--ni-navy);
+  }
+  .receipt-host-company {
+    font-weight: 400;
+    color: var(--ni-grey);
+  }
+  .receipt-students {
+    color: var(--ni-slate);
+    text-align: right;
+    word-break: break-all;
+  }
+  .receipt-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--ni-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .receipt-total {
+    font-size: 0.82rem;
+    color: var(--ni-grey);
+  }
+  .receipt-total strong {
+    color: var(--ni-navy);
+  }
+
+  @media (max-width: 640px) {
+    .receipt {
+      max-height: 90vh;
+    }
+    .receipt-header, .receipt-body, .receipt-footer {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+    .receipt-row {
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+    .receipt-students {
+      text-align: left;
+      font-size: 0.78rem;
+    }
+  }
+
   /* Print */
   @media print {
     .header { position: static; }
     .export-bar { display: none; }
     .host-card { break-inside: avoid; }
+    .receipt-overlay { position: static; background: none; padding: 0; opacity: 1; pointer-events: auto; }
+    .receipt { max-height: none; box-shadow: none; }
+    .receipt-footer .btn-coral { display: none; }
   }
 </style>
 <script src="linkedin-directory.js"></script>
@@ -805,6 +929,10 @@
   <span class="step-label-dark">Step 3 —</span>
   <span class="export-summary" id="exportSummary">Nominate students above, then submit</span>
   <button class="btn btn-coral" id="submitBtn" style="padding:0.75rem 2rem; font-size:0.95rem;">Submit to Not Impossible ↑</button>
+</div>
+
+<div class="receipt-overlay" id="receiptOverlay">
+  <div class="receipt" id="receiptContent"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1446,22 +1574,68 @@ async function submitToAirtable() {
 
   btns.forEach(b => { b.disabled = false; b.textContent = 'Submit to Not Impossible ↑'; });
 
-  showToast(`${matches.length} match${matches.length !== 1 ? 'es' : ''} submitted ✓`);
+  showReceipt(teacherName, teacherEmail, teacherSchool, matches);
   studentAssignments = {};
   saveState();
   render();
-
-  const exportSummary = document.getElementById('exportSummary');
-  const submitBtn = document.getElementById('submitBtn');
-  if (exportSummary) exportSummary.textContent = "Done — we'll email students and copy you in.";
-  if (submitBtn) submitBtn.textContent = 'Submitted ✓';
-  setTimeout(() => {
-    if (submitBtn) submitBtn.textContent = 'Submit to Not Impossible ↑';
-    updateExportBarState(Object.values(studentAssignments).reduce((sum, emails) => sum + emails.length, 0));
-  }, 2200);
+  updateExportBarState(0);
 }
 
 document.getElementById('submitBtn').addEventListener('click', submitToAirtable);
+
+// Receipt
+function showReceipt(teacherName, teacherEmail, teacherSchool, matches) {
+  // Group matches by host
+  const byHost = {};
+  matches.forEach(m => {
+    const hKey = `${m.host_name}__${m.company}`;
+    if (!byHost[hKey]) byHost[hKey] = { name: m.host_name, company: m.company, subject: m.subject, students: [] };
+    byHost[hKey].students.push(m.student_email);
+  });
+
+  // Group hosts by subject
+  const bySubject = {};
+  Object.values(byHost).forEach(h => {
+    if (!bySubject[h.subject]) bySubject[h.subject] = [];
+    bySubject[h.subject].push(h);
+  });
+
+  let bodyHtml = '';
+  for (const [subject, hostList] of Object.entries(bySubject)) {
+    bodyHtml += `<div class="receipt-group"><div class="receipt-group-heading">${escapeHtml(subject)}</div>`;
+    hostList.forEach(h => {
+      bodyHtml += `<div class="receipt-row">
+        <div><span class="receipt-host">${escapeHtml(h.name)}</span> <span class="receipt-host-company">— ${escapeHtml(h.company)}</span></div>
+        <div class="receipt-students">${h.students.map(escapeHtml).join(', ')}</div>
+      </div>`;
+    });
+    bodyHtml += '</div>';
+  }
+
+  const hostCount = Object.keys(byHost).length;
+
+  document.getElementById('receiptContent').innerHTML = `
+    <div class="receipt-header">
+      <h2>Nominations submitted</h2>
+      <p>${escapeHtml(teacherName)} · ${escapeHtml(teacherEmail)} · ${escapeHtml(teacherSchool)}</p>
+    </div>
+    <div class="receipt-body">${bodyHtml}</div>
+    <div class="receipt-footer">
+      <div class="receipt-total"><strong>${matches.length}</strong> nomination${matches.length !== 1 ? 's' : ''} across <strong>${hostCount}</strong> host${hostCount !== 1 ? 's' : ''}</div>
+      <button class="btn btn-coral" id="receiptClose">Done</button>
+    </div>
+  `;
+
+  const overlay = document.getElementById('receiptOverlay');
+  overlay.classList.add('show');
+
+  document.getElementById('receiptClose').addEventListener('click', () => {
+    overlay.classList.remove('show');
+  });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.remove('show');
+  });
+}
 
 // Toast
 function showToast(msg) {
