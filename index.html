@@ -1431,43 +1431,34 @@ async function submitToAirtable() {
   const btns = document.querySelectorAll('#submitBtn');
   btns.forEach(b => { b.disabled = true; b.textContent = 'Sending…'; });
 
-  let sent = 0;
-
-  for (let i = 0; i < matches.length; i++) {
-    const match = matches[i];
-    btns.forEach(b => { b.textContent = `Sending ${i + 1}/${matches.length}…`; });
-    try {
-      await fetch(ZAPIER_WEBHOOK, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(match)
-      });
-      sent++;
-    } catch (e) {
-      // With no-cors we can only detect network-level failures.
-    }
+  try {
+    await fetch(ZAPIER_WEBHOOK, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ matches })
+    });
+  } catch (e) {
+    btns.forEach(b => { b.disabled = false; b.textContent = 'Submit to Not Impossible ↑'; });
+    showToast('Submission failed — please check your connection and try again');
+    return;
   }
 
   btns.forEach(b => { b.disabled = false; b.textContent = 'Submit to Not Impossible ↑'; });
 
-  if (sent > 0) {
-    showToast(`${sent} match${sent !== 1 ? 'es' : ''} submitted ✓`);
-    studentAssignments = {};
-    saveState();
-    render();
+  showToast(`${matches.length} match${matches.length !== 1 ? 'es' : ''} submitted ✓`);
+  studentAssignments = {};
+  saveState();
+  render();
 
-    const exportSummary = document.getElementById('exportSummary');
-    const submitBtn = document.getElementById('submitBtn');
-    if (exportSummary) exportSummary.textContent = "Done — we'll email students and copy you in.";
-    if (submitBtn) submitBtn.textContent = 'Submitted ✓';
-    setTimeout(() => {
-      if (submitBtn) submitBtn.textContent = 'Submit to Not Impossible ↑';
-      updateExportBarState(Object.values(studentAssignments).reduce((sum, emails) => sum + emails.length, 0));
-    }, 2200);
-  } else {
-    showToast('Submission failed — please check your connection and try again');
-  }
+  const exportSummary = document.getElementById('exportSummary');
+  const submitBtn = document.getElementById('submitBtn');
+  if (exportSummary) exportSummary.textContent = "Done — we'll email students and copy you in.";
+  if (submitBtn) submitBtn.textContent = 'Submitted ✓';
+  setTimeout(() => {
+    if (submitBtn) submitBtn.textContent = 'Submit to Not Impossible ↑';
+    updateExportBarState(Object.values(studentAssignments).reduce((sum, emails) => sum + emails.length, 0));
+  }, 2200);
 }
 
 document.getElementById('submitBtn').addEventListener('click', submitToAirtable);
