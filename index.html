@@ -30,6 +30,49 @@
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
+  /* Accessibility: visually hidden but available to screen readers */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Skip-to-content link */
+  .skip-link {
+    position: absolute;
+    top: -100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ni-coral);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0 0 var(--radius) var(--radius);
+    font-weight: 600;
+    font-size: 0.9rem;
+    z-index: 999;
+    text-decoration: none;
+    transition: top 0.2s;
+  }
+  .skip-link:focus {
+    top: 0;
+  }
+
+  /* Focus-visible outlines for keyboard users */
+  :focus-visible {
+    outline: 3px solid var(--ni-coral);
+    outline-offset: 2px;
+  }
+  .student-email-input:focus-visible {
+    outline: 3px solid var(--ni-coral);
+    outline-offset: 0;
+  }
+
   body {
     font-family: 'DM Sans', sans-serif;
     background: var(--ni-light);
@@ -421,8 +464,17 @@
     font-size: 0.85rem;
     line-height: 1;
     margin-left: 0.15rem;
+    background: none;
+    border: none;
+    padding: 0.1rem 0.2rem;
+    border-radius: 50%;
+    font-family: inherit;
   }
   .student-tag .remove:hover { color: #c0392b; }
+  .student-tag .remove:focus-visible {
+    outline: 2px solid var(--ni-coral);
+    outline-offset: 1px;
+  }
 
   /* Export panel */
   .export-bar {
@@ -893,49 +945,58 @@
 </head>
 <body>
 
-<div class="header">
+<a href="#hostList" class="skip-link">Skip to host directory</a>
+
+<header class="header">
   <div class="header-inner">
     <h1>Not Impossible — <span>Work Experience Matching</span></h1>
     <p class="header-intro">Nominate students who are unlikely to have the family connections so often needed to find work experience. Every host below has volunteered to host a one-hour, one-on-one microplacement — and 94% of students who've done one say they feel more optimistic about their future.</p>
     <div class="step-section">
-      <div class="step-label step-toggle" id="step1Toggle">Step 1 — About you<span class="step-summary" id="step1Summary"></span><span class="step-chevron"></span></div>
+      <div class="step-label step-toggle" id="step1Toggle" role="button" tabindex="0" aria-expanded="true" aria-controls="step1Content">Step 1 — About you<span class="step-summary" id="step1Summary"></span><span class="step-chevron"></span></div>
       <div class="step-content" id="step1Content">
         <div class="controls" style="margin-bottom:0.6rem;">
-          <input type="text" class="search-input" id="teacherName" placeholder="Your name" style="max-width:220px;">
-          <input type="email" class="search-input" id="teacherEmail" placeholder="Your email" style="max-width:220px;">
-          <input type="text" class="search-input" id="teacherSchool" placeholder="School / university" style="max-width:220px;">
+          <label for="teacherName" class="sr-only">Your name</label>
+          <input type="text" class="search-input" id="teacherName" placeholder="Your name" autocomplete="name" style="max-width:220px;">
+          <label for="teacherEmail" class="sr-only">Your email</label>
+          <input type="email" class="search-input" id="teacherEmail" placeholder="Your email" autocomplete="email" style="max-width:220px;">
+          <label for="teacherSchool" class="sr-only">School or university</label>
+          <input type="text" class="search-input" id="teacherSchool" placeholder="School / university" autocomplete="organization" style="max-width:220px;">
         </div>
       </div>
     </div>
     <div class="step-section">
-      <div class="step-label step-toggle" id="step2Toggle">Step 2 — Browse hosts and nominate students<span class="step-summary" id="step2Summary"></span><span class="step-chevron"></span></div>
+      <div class="step-label step-toggle" id="step2Toggle" role="button" tabindex="0" aria-expanded="true" aria-controls="step2Content">Step 2 — Browse hosts and nominate students<span class="step-summary" id="step2Summary"></span><span class="step-chevron"></span></div>
       <div class="step-content" id="step2Content">
         <div class="controls">
           <div class="subject-filter" id="subjectFilterWrap">
             <div class="subject-filter-list" id="subjectFilterMenu" aria-label="Filter by one or more subjects"></div>
           </div>
-          <input type="text" class="search-input" id="searchInput" placeholder="Search hosts, companies…">
+          <label for="searchInput" class="sr-only">Search hosts and companies</label>
+          <input type="text" class="search-input" id="searchInput" placeholder="Search hosts, companies…" aria-controls="hostList">
 
-          <button class="btn btn-outline" id="clearAllBtn" title="Clear all student emails">Clear All</button>
+          <button class="btn btn-outline" id="clearAllBtn" title="Clear all student emails" aria-label="Clear all student nominations">Clear All</button>
         </div>
       </div>
     </div>
   </div>
-</div>
+</header>
 
-<div class="main" id="hostList"></div>
+<main class="main" id="hostList" aria-label="Host directory"></main>
 
 <div class="export-bar" id="exportBar">
   <span class="step-label-dark">Step 3 —</span>
-  <span class="export-summary" id="exportSummary">Nominate students above, then submit</span>
-  <button class="btn btn-coral" id="submitBtn" style="padding:0.75rem 2rem; font-size:0.95rem;">Submit to Not Impossible ↑</button>
+  <span class="export-summary" id="exportSummary" aria-live="polite">Nominate students above, then submit</span>
+  <button class="btn btn-coral" id="submitBtn" style="padding:0.75rem 2rem; font-size:0.95rem;" aria-describedby="exportSummary">Submit to Not Impossible</button>
 </div>
 
 <div class="receipt-overlay" id="receiptOverlay">
-  <div class="receipt" id="receiptContent"></div>
+  <div class="receipt" id="receiptContent" role="dialog" aria-modal="true" aria-labelledby="receiptHeading"></div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<!-- Screen reader announcement region for dynamic state changes -->
+<div id="a11yAnnounce" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
 // ── Host Data ──
@@ -1337,7 +1398,7 @@ function render() {
   const subjectOrder = subjects.filter(s => grouped[s]);
 
   if (subjectOrder.length === 0) {
-    container.innerHTML = '<div class="empty-state"><p>No hosts match your search.</p></div>';
+    container.innerHTML = '<div class="empty-state" role="status"><p>No hosts match your search.</p></div>';
     updateExportBarState(totalAssigned);
     return;
   }
@@ -1366,19 +1427,19 @@ function render() {
       ].filter(Boolean).join('');
 
       const tagsHtml = emails.length > 0
-        ? `<div class="nominated-section">
+        ? `<div class="nominated-section" role="group" aria-label="Nominated students for ${escapeHtml(host.name)}">
             <div class="nominated-label">&#10003; Nominated (${emails.length})</div>
-            <div class="nominated-tags">${emails.map((email, i) =>
-              `<span class="student-tag">${escapeHtml(email)}<span class="remove" data-key="${key}" data-idx="${i}">×</span></span>`
+            <div class="nominated-tags" role="list">${emails.map((email, i) =>
+              `<span class="student-tag" role="listitem">${escapeHtml(email)}<button class="remove" data-key="${key}" data-idx="${i}" aria-label="Remove ${escapeHtml(email)} from ${escapeHtml(host.name)}">×</button></span>`
             ).join('')}</div>
           </div>`
         : '';
 
       const availableQuickAdd = savedStudents.filter(email => !emails.includes(email));
       const quickAddHtml = availableQuickAdd.length > 0
-        ? `<div class="quick-add-section">
-            <div class="quick-add-label">Previously used emails — click to add</div>
-            <div class="quick-add-tags">${availableQuickAdd.slice(0, 8).map(email => `<button class="student-tag quick-add" data-key="${key}" data-email="${escapeHtml(email)}" title="Add ${escapeHtml(email)}">+ ${escapeHtml(email)}</button>`).join('')}</div>
+        ? `<div class="quick-add-section" role="group" aria-label="Quick-add previously used students to ${escapeHtml(host.name)}">
+            <div class="quick-add-label" id="qa-label-${key.replace(/[^a-zA-Z0-9]/g, '-')}">Previously used emails — click to add</div>
+            <div class="quick-add-tags" role="list">${availableQuickAdd.slice(0, 8).map(email => `<button class="student-tag quick-add" role="listitem" data-key="${key}" data-email="${escapeHtml(email)}" aria-label="Add ${escapeHtml(email)} to ${escapeHtml(host.name)}">+ ${escapeHtml(email)}</button>`).join('')}</div>
           </div>`
         : '';
 
@@ -1393,10 +1454,10 @@ function render() {
         <div class="host-desc">${host.desc}</div>
         ${linksHtml ? `<div class="host-links">${linksHtml}</div>` : ''}
         <div class="student-area">
-          <div class="student-label">Nominate a student for this host</div>
+          <div class="student-label" id="nominate-label-${key.replace(/[^a-zA-Z0-9]/g, '-')}">Nominate a student for ${escapeHtml(host.name)}</div>
           <div class="student-input-row">
-            <input type="email" class="student-email-input" placeholder="Student email address" data-key="${key}">
-            <button class="btn-add" data-key="${key}">Add</button>
+            <input type="email" class="student-email-input" placeholder="Student email address" data-key="${key}" aria-label="Student email for ${escapeHtml(host.name)}" aria-describedby="nominate-label-${key.replace(/[^a-zA-Z0-9]/g, '-')}">
+            <button class="btn-add" data-key="${key}" aria-label="Add student to ${escapeHtml(host.name)}" aria-disabled="true">Add</button>
           </div>
           ${quickAddHtml}
           ${tagsHtml}
@@ -1469,10 +1530,12 @@ document.getElementById('hostList').addEventListener('click', (e) => {
   if (e.target.classList.contains('remove')) {
     const key = e.target.dataset.key;
     const idx = parseInt(e.target.dataset.idx);
+    const removedEmail = studentAssignments[key][idx];
     studentAssignments[key].splice(idx, 1);
     if (studentAssignments[key].length === 0) delete studentAssignments[key];
     saveState();
     render();
+    announce(`${removedEmail} removed`);
   }
 });
 
@@ -1491,8 +1554,10 @@ document.getElementById('hostList').addEventListener('input', (e) => {
     const btn = document.querySelector(`.btn-add[data-key="${CSS.escape(key)}"]`);
     if (e.target.value.trim()) {
       btn.classList.add('active');
+      btn.setAttribute('aria-disabled', 'false');
     } else {
       btn.classList.remove('active');
+      btn.setAttribute('aria-disabled', 'true');
     }
   }
 });
@@ -1616,7 +1681,7 @@ function showReceipt(teacherName, teacherEmail, teacherSchool, matches) {
 
   document.getElementById('receiptContent').innerHTML = `
     <div class="receipt-header">
-      <h2>Nominations submitted</h2>
+      <h2 id="receiptHeading">Nominations submitted</h2>
       <p>${escapeHtml(teacherName)} · ${escapeHtml(teacherEmail)} · ${escapeHtml(teacherSchool)}</p>
     </div>
     <div class="receipt-body">${bodyHtml}</div>
@@ -1627,14 +1692,56 @@ function showReceipt(teacherName, teacherEmail, teacherSchool, matches) {
   `;
 
   const overlay = document.getElementById('receiptOverlay');
+  const receiptDialog = document.getElementById('receiptContent');
   overlay.classList.add('show');
 
-  document.getElementById('receiptClose').addEventListener('click', () => {
+  // Focus management: move focus into the dialog
+  const closeBtn = document.getElementById('receiptClose');
+  closeBtn.focus();
+
+  function closeReceipt() {
     overlay.classList.remove('show');
-  });
+    // Return focus to submit button
+    document.getElementById('submitBtn').focus();
+    // Clean up event listeners
+    document.removeEventListener('keydown', handleReceiptKeydown);
+  }
+
+  // Escape key to close
+  function handleReceiptKeydown(e) {
+    if (e.key === 'Escape') {
+      closeReceipt();
+      return;
+    }
+    // Focus trap: keep Tab within the dialog
+    if (e.key === 'Tab') {
+      const focusable = receiptDialog.querySelectorAll('a[href], button, [tabindex]:not([tabindex="-1"])');
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    }
+  }
+  document.addEventListener('keydown', handleReceiptKeydown);
+
+  closeBtn.addEventListener('click', closeReceipt);
   overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) overlay.classList.remove('show');
+    if (e.target === overlay) closeReceipt();
   });
+}
+
+// Screen reader announcement (separate from toast for reliable AT support)
+function announce(msg) {
+  const region = document.getElementById('a11yAnnounce');
+  if (!region) return;
+  region.textContent = '';
+  // Force reflow so the screen reader notices the change
+  void region.offsetHeight;
+  region.textContent = msg;
 }
 
 // Toast
@@ -1642,6 +1749,7 @@ function showToast(msg) {
   const toast = document.getElementById('toast');
   toast.textContent = msg;
   toast.classList.add('show');
+  announce(msg);
   setTimeout(() => toast.classList.remove('show'), 2000);
 }
 
@@ -1674,14 +1782,23 @@ function setupCollapsible() {
 }
 
 document.querySelectorAll('.step-toggle').forEach(toggle => {
-  toggle.addEventListener('click', () => {
+  function toggleStep() {
     const content = toggle.nextElementSibling;
     content.classList.toggle('collapsed');
     toggle.classList.toggle('is-collapsed');
+    const isExpanded = !content.classList.contains('collapsed');
+    toggle.setAttribute('aria-expanded', String(isExpanded));
     updateStepSummaries();
     // If the user opened a section, suppress auto-collapse briefly
-    if (!content.classList.contains('collapsed')) {
+    if (isExpanded) {
       autoCollapseSuppressUntil = Date.now() + 4000;
+    }
+  }
+  toggle.addEventListener('click', toggleStep);
+  toggle.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleStep();
     }
   });
 });
@@ -1705,6 +1822,7 @@ function collapseStep(stepId) {
   if (content && toggle && !content.classList.contains('collapsed')) {
     content.classList.add('collapsed');
     toggle.classList.add('is-collapsed');
+    toggle.setAttribute('aria-expanded', 'false');
     updateStepSummaries();
   }
 }
