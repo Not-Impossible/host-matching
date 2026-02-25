@@ -1580,12 +1580,11 @@ async function submitToAirtable() {
 
   // Single webhook call — use Zapier Loop to fan out into Airtable rows
   try {
-    const resp = await fetch(ZAPIER_WEBHOOK, {
+    await fetch(ZAPIER_WEBHOOK, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   } catch (e) {
     btns.forEach(b => { b.disabled = false; b.textContent = 'Submit to Not Impossible ↑'; });
     showToast('Submission failed — please check your connection and try again');
