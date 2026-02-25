@@ -1558,35 +1558,41 @@ async function submitToAirtable() {
 
   if (matches.length === 0) { showToast('No students to submit'); return; }
 
+  // Build Zapier line-items payload: parallel arrays so one "Looping by Zapier"
+  // step iterates them in lockstep → one Airtable record per index.
+  // Scalar teacher fields stay outside the arrays.
+  const payload = {
+    submitted_by: teacherName,
+    submitted_by_email: teacherEmail,
+    school: teacherSchool,
+    host_name: matches.map(m => m.host_name),
+    company: matches.map(m => m.company),
+    subject: matches.map(m => m.subject),
+    host_description: matches.map(m => m.host_description),
+    employer_website: matches.map(m => m.employer_website),
+    host_linkedin: matches.map(m => m.host_linkedin),
+    student_email: matches.map(m => m.student_email)
+  };
+
   // Disable button and show progress
   const btns = document.querySelectorAll('#submitBtn');
-  btns.forEach(b => { b.disabled = true; b.textContent = `Sending 0/${matches.length}…`; });
+  btns.forEach(b => { b.disabled = true; b.textContent = 'Sending…'; });
 
-  // Send one webhook per match so each triggers exactly one Airtable record
-  // (no Zapier Loop step needed — removes the parallel-array problem)
-  let sent = 0;
-  let failed = 0;
-  for (const match of matches) {
-    try {
-      const resp = await fetch(ZAPIER_WEBHOOK, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(match)
-      });
-      if (!resp.ok) failed++;
-      else sent++;
-    } catch (e) {
-      failed++;
-    }
-    btns.forEach(b => { b.textContent = `Sending ${sent + failed}/${matches.length}…`; });
+  // Single webhook call — use Zapier Loop to fan out into Airtable rows
+  try {
+    const resp = await fetch(ZAPIER_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  } catch (e) {
+    btns.forEach(b => { b.disabled = false; b.textContent = 'Submit to Not Impossible ↑'; });
+    showToast('Submission failed — please check your connection and try again');
+    return;
   }
 
   btns.forEach(b => { b.disabled = false; b.textContent = 'Submit to Not Impossible ↑'; });
-
-  if (failed > 0) {
-    showToast(`${sent} sent, ${failed} failed — you can retry`);
-    return;
-  }
 
   showReceipt(teacherName, teacherEmail, teacherSchool, matches);
   studentAssignments = {};
