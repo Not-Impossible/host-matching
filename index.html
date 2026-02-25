@@ -1558,6 +1558,20 @@ async function submitToAirtable() {
 
   if (matches.length === 0) { showToast('No students to submit'); return; }
 
+  // Build payload with JSON arrays so Zapier Loop can iterate properly
+  const payload = {
+    host_name: matches.map(m => m.host_name),
+    company: matches.map(m => m.company),
+    subject: matches.map(m => m.subject),
+    host_description: matches.map(m => m.host_description),
+    employer_website: matches.map(m => m.employer_website),
+    host_linkedin: matches.map(m => m.host_linkedin),
+    student_email: matches.map(m => m.student_email),
+    submitted_by: matches.map(m => m.submitted_by),
+    submitted_by_email: matches.map(m => m.submitted_by_email),
+    school: matches.map(m => m.school)
+  };
+
   // Disable button and show progress
   const btns = document.querySelectorAll('#submitBtn');
   btns.forEach(b => { b.disabled = true; b.textContent = 'Sending…'; });
@@ -1565,9 +1579,8 @@ async function submitToAirtable() {
   try {
     await fetch(ZAPIER_WEBHOOK, {
       method: 'POST',
-      mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ matches })
+      body: JSON.stringify(payload)
     });
   } catch (e) {
     btns.forEach(b => { b.disabled = false; b.textContent = 'Submit to Not Impossible ↑'; });
