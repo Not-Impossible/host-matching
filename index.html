@@ -1558,37 +1558,35 @@ async function submitToAirtable() {
 
   if (matches.length === 0) { showToast('No students to submit'); return; }
 
-  // Build payload with JSON arrays so Zapier Loop can iterate properly
-  const payload = {
-    host_name: matches.map(m => m.host_name),
-    company: matches.map(m => m.company),
-    subject: matches.map(m => m.subject),
-    host_description: matches.map(m => m.host_description),
-    employer_website: matches.map(m => m.employer_website),
-    host_linkedin: matches.map(m => m.host_linkedin),
-    student_email: matches.map(m => m.student_email),
-    submitted_by: matches.map(m => m.submitted_by),
-    submitted_by_email: matches.map(m => m.submitted_by_email),
-    school: matches.map(m => m.school)
-  };
-
   // Disable button and show progress
   const btns = document.querySelectorAll('#submitBtn');
-  btns.forEach(b => { b.disabled = true; b.textContent = 'Sending…'; });
+  btns.forEach(b => { b.disabled = true; b.textContent = `Sending 0/${matches.length}…`; });
 
-  try {
-    await fetch(ZAPIER_WEBHOOK, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-  } catch (e) {
-    btns.forEach(b => { b.disabled = false; b.textContent = 'Submit to Not Impossible ↑'; });
-    showToast('Submission failed — please check your connection and try again');
-    return;
+  // Send one webhook per match so each triggers exactly one Airtable record
+  // (no Zapier Loop step needed — removes the parallel-array problem)
+  let sent = 0;
+  let failed = 0;
+  for (const match of matches) {
+    try {
+      const resp = await fetch(ZAPIER_WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(match)
+      });
+      if (!resp.ok) failed++;
+      else sent++;
+    } catch (e) {
+      failed++;
+    }
+    btns.forEach(b => { b.textContent = `Sending ${sent + failed}/${matches.length}…`; });
   }
 
   btns.forEach(b => { b.disabled = false; b.textContent = 'Submit to Not Impossible ↑'; });
+
+  if (failed > 0) {
+    showToast(`${sent} sent, ${failed} failed — you can retry`);
+    return;
+  }
 
   showReceipt(teacherName, teacherEmail, teacherSchool, matches);
   studentAssignments = {};
