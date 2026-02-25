@@ -1578,15 +1578,19 @@ async function submitToAirtable() {
   const btns = document.querySelectorAll('#submitBtn');
   btns.forEach(b => { b.disabled = true; b.textContent = 'Sending…'; });
 
-  // Single webhook call — use Zapier Loop to fan out into Airtable rows
+  // Single webhook call — use Zapier Loop to fan out into Airtable rows.
+  // NOTE: We intentionally omit the Content-Type header so the browser sends
+  // the default text/plain, which is CORS-safelisted and avoids a preflight
+  // OPTIONS request.  Zapier catch hooks auto-parse JSON bodies regardless
+  // of Content-Type, so the payload is still processed correctly.
   try {
     const resp = await fetch(ZAPIER_WEBHOOK, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   } catch (e) {
+    console.error('Zapier submission error:', e);
     btns.forEach(b => { b.disabled = false; b.textContent = 'Submit to Not Impossible ↑'; });
     showToast('Submission failed — please check your connection and try again');
     return;
