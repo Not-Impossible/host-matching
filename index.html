@@ -1560,18 +1560,18 @@ async function submitToAirtable() {
 
   // Build Zapier line-items payload: parallel arrays so one "Looping by Zapier"
   // step iterates them in lockstep → one Airtable record per index.
-  // Scalar teacher fields stay outside the arrays.
+  // All fields are arrays (including teacher fields) to match the Loop config.
   const payload = {
-    submitted_by: teacherName,
-    submitted_by_email: teacherEmail,
-    school: teacherSchool,
     host_name: matches.map(m => m.host_name),
     company: matches.map(m => m.company),
     subject: matches.map(m => m.subject),
     host_description: matches.map(m => m.host_description),
     employer_website: matches.map(m => m.employer_website),
     host_linkedin: matches.map(m => m.host_linkedin),
-    student_email: matches.map(m => m.student_email)
+    student_email: matches.map(m => m.student_email),
+    submitted_by: matches.map(() => teacherName),
+    submitted_by_email: matches.map(() => teacherEmail),
+    school: matches.map(() => teacherSchool)
   };
 
   // Disable button and show progress
