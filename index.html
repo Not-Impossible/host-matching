@@ -536,23 +536,54 @@
   }
 
   .step-chevron {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    text-align: center;
-    line-height: 20px;
-    transition: transform 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    transition: transform 0.3s ease, background 0.15s;
     flex-shrink: 0;
+    margin-left: 0.4rem;
+  }
+
+  .step-toggle:hover .step-chevron {
+    background: rgba(255,255,255,0.22);
   }
 
   .step-chevron::after {
     content: '▾';
     font-size: 0.7rem;
-    opacity: 0.6;
+    opacity: 0.85;
   }
 
   .step-toggle.is-collapsed .step-chevron {
     transform: rotate(-90deg);
+  }
+
+  /* Collapse-all button — visible only when browsing and a section is open */
+  .collapse-all-btn {
+    display: none;
+    margin: 0.4rem 0 0;
+    padding: 0.3rem 1rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.75);
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .collapse-all-btn:hover {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+  }
+
+  .collapse-all-btn.visible {
+    display: inline-block;
   }
 
   .step-content {
@@ -926,6 +957,7 @@
         </div>
       </div>
     </div>
+    <button class="collapse-all-btn" id="collapseAllBtn">Hide steps ▲</button>
   </div>
 </div>
 
@@ -1712,12 +1744,24 @@ document.querySelectorAll('.step-toggle').forEach(toggle => {
     content.classList.toggle('collapsed');
     toggle.classList.toggle('is-collapsed');
     updateStepSummaries();
-    // If the user opened a section, suppress auto-collapse briefly
-    if (!content.classList.contains('collapsed')) {
-      autoCollapseSuppressUntil = Date.now() + 4000;
-    }
+    updateCollapseAllBtn();
   });
 });
+
+// "Hide steps" button — collapses both sections in one click
+const collapseAllBtn = document.getElementById('collapseAllBtn');
+collapseAllBtn.addEventListener('click', () => {
+  collapseStep('step1');
+  collapseStep('step2');
+  updateCollapseAllBtn();
+});
+
+function updateCollapseAllBtn() {
+  const anyOpen = !document.getElementById('step1Content').classList.contains('collapsed')
+               || !document.getElementById('step2Content').classList.contains('collapsed');
+  const inBrowsing = document.body.classList.contains('browsing-mode');
+  collapseAllBtn.classList.toggle('visible', inBrowsing && anyOpen);
+}
 
 // Update summaries when inputs change
 document.getElementById('teacherName').addEventListener('input', updateStepSummaries);
@@ -1728,9 +1772,7 @@ document.getElementById('searchInput').addEventListener('input', updateStepSumma
 
 
 
-// Auto-collapse: suppress briefly after manual toggle so the section
-// doesn't slam shut the instant the user opens it.
-let autoCollapseSuppressUntil = 0;
+let wasInBrowsingMode = false;
 
 function collapseStep(stepId) {
   const content = document.getElementById(`${stepId}Content`);
@@ -1748,10 +1790,15 @@ function setBrowsingMode() {
   const shouldCompact = window.innerWidth > 640 && window.scrollY > threshold;
   document.body.classList.toggle('browsing-mode', shouldCompact);
 
-  if (shouldCompact && Date.now() > autoCollapseSuppressUntil) {
+  // Only auto-collapse on the transition INTO browsing mode, not on every
+  // scroll.  Once a user re-expands a section it stays open until they
+  // manually close it or scroll back to the top and down again.
+  if (shouldCompact && !wasInBrowsingMode) {
     collapseStep('step1');
     collapseStep('step2');
   }
+  wasInBrowsingMode = shouldCompact;
+  updateCollapseAllBtn();
 }
 
 // ── Init ──
