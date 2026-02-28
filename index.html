@@ -1712,10 +1712,6 @@ document.querySelectorAll('.step-toggle').forEach(toggle => {
     content.classList.toggle('collapsed');
     toggle.classList.toggle('is-collapsed');
     updateStepSummaries();
-    // If the user opened a section, suppress auto-collapse briefly
-    if (!content.classList.contains('collapsed')) {
-      autoCollapseSuppressUntil = Date.now() + 4000;
-    }
   });
 });
 
@@ -1728,9 +1724,7 @@ document.getElementById('searchInput').addEventListener('input', updateStepSumma
 
 
 
-// Auto-collapse: suppress briefly after manual toggle so the section
-// doesn't slam shut the instant the user opens it.
-let autoCollapseSuppressUntil = 0;
+let wasInBrowsingMode = false;
 
 function collapseStep(stepId) {
   const content = document.getElementById(`${stepId}Content`);
@@ -1748,10 +1742,14 @@ function setBrowsingMode() {
   const shouldCompact = window.innerWidth > 640 && window.scrollY > threshold;
   document.body.classList.toggle('browsing-mode', shouldCompact);
 
-  if (shouldCompact && Date.now() > autoCollapseSuppressUntil) {
+  // Only auto-collapse on the transition INTO browsing mode, not on every
+  // scroll.  Once a user re-expands a section it stays open until they
+  // manually close it or scroll back to the top and down again.
+  if (shouldCompact && !wasInBrowsingMode) {
     collapseStep('step1');
     collapseStep('step2');
   }
+  wasInBrowsingMode = shouldCompact;
 }
 
 // ── Init ──
