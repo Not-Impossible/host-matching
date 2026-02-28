@@ -1567,16 +1567,16 @@ async function submitToAirtable() {
   // step iterates them in lockstep → one Airtable record per index.
   // All fields are arrays (including teacher fields) to match the Loop config.
   const payload = {
-    host_name: matches.map(m => m.host_name),
-    company: matches.map(m => m.company),
-    subject: matches.map(m => m.subject),
-    host_description: matches.map(m => m.host_description),
-    employer_website: matches.map(m => m.employer_website),
-    host_linkedin: matches.map(m => m.host_linkedin),
-    student_email: matches.map(m => m.student_email),
-    submitted_by: matches.map(() => teacherName),
-    submitted_by_email: matches.map(() => teacherEmail),
-    school: matches.map(() => teacherSchool)
+    host_name: matches.map(m => m.host_name).join('|||'),
+    company: matches.map(m => m.company).join('|||'),
+    subject: matches.map(m => m.subject).join('|||'),
+    host_description: matches.map(m => m.host_description).join('|||'),
+    employer_website: matches.map(m => m.employer_website).join('|||'),
+    host_linkedin: matches.map(m => m.host_linkedin).join('|||'),
+    student_email: matches.map(m => m.student_email).join('|||'),
+    submitted_by: matches.map(() => teacherName).join('|||'),
+    submitted_by_email: matches.map(() => teacherEmail).join('|||'),
+    school: matches.map(() => teacherSchool).join('|||')
   };
 
   // Disable button and show progress
